@@ -22,12 +22,12 @@ var AudienceTags = []string{
 
 // LawInput — закон для извлечения. Text уже нормализован (legal.Normalize).
 type LawInput struct {
-	Title  string
-	Number string
-	Text   string
+	Title     string
+	Number    string
+	Fragments []Fragment // нумерованные фрагменты текста (SplitFragments)
 }
 
-// Quotes — дословные фрагменты текста, на которых держится каждое поле. Их проверяет код и человек в lawtool review.
+// Quotes — фрагменты закона, на которых держится каждое поле. Выбирает модель по номеру, текст подставляет код.
 type Quotes struct {
 	WhatChanged  string `json:"what_changed"`
 	WhoAffected  string `json:"who_affected"`
@@ -53,8 +53,9 @@ type LawExtractor interface {
 
 var isoDate = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
-// Validate проверяет черновик по тексту закона. Для нерелевантных законов проверяется только флаг.
-func (d LawDraft) Validate(text string) error {
+// Validate проверяет черновик. Цитаты (Quotes) подставлены кодом из фрагментов закона, поэтому подлинны;
+// дата вступления должна содержаться в своём фрагменте. Для нерелевантных законов проверяется только флаг.
+func (d LawDraft) Validate() error {
 	if !d.Relevant {
 		return nil
 	}
@@ -96,37 +97,101 @@ func (d LawDraft) Validate(text string) error {
 			return errors.New("дата вступления без цитаты")
 		}
 	}
-	norm := normalizeForQuote(text)
-	for name, q := range map[string]string{
-		"что изменилось": d.Quotes.WhatChanged, "кого касается": d.Quotes.WhoAffected, "вступление в силу": d.Quotes.EffectiveDay,
-	} {
-		if q == "" {
-			if name == "вступление в силу" {
-				continue
-			}
-			return fmt.Errorf("нет цитаты для поля «%s»", name)
-		}
-		if utf8.RuneCountInString(q) < 12 {
-			return fmt.Errorf("цитата для «%s» слишком короткая", name)
-		}
-		if !strings.Contains(norm, normalizeForQuote(q)) {
-			return fmt.Errorf("цитата для «%s» не найдена в тексте", name)
-		}
+	if d.Quotes.WhatChanged == "" || d.Quotes.WhoAffected == "" {
+		return errors.New("нет фрагментов-обоснований для «что изменилось» и «кого касается»")
+	}
+	if d.EffectiveAt != "" && !DateInFragment(d.EffectiveAt, d.Quotes.EffectiveDay) {
+		return fmt.Errorf("дата %s не подтверждается фрагментом закона", d.EffectiveAt)
 	}
 	return nil
 }
 
-// normalizeForQuote приводит текст и цитату к одному виду: регистр, пробелы, кавычки и тире.
-func normalizeForQuote(s string) string {
-	s = strings.NewReplacer(" ", " ", "«", `"`, "»", `"`, "“", `"`, "”", `"`, "—", "-", "–", "-", "…", "...").Replace(s)
-	return strings.ToLower(strings.Join(strings.Fields(s), " "))
+var monthWords = []string{"января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"}
+
+// DateInFragment: в фрагменте есть день, месяц (словом) и год даты YYYY-MM-DD, либо число в виде dd.mm.yyyy.
+func DateInFragment(iso, fragment string) bool {
+	t, err := time.Parse("2006-01-02", iso)
+	if err != nil {
+		return false
+	}
+	f := strings.ToLower(strings.Join(strings.Fields(strings.ReplaceAll(fragment, "\u00a0", " ")), " "))
+	if strings.Contains(f, t.Format("02.01.2006")) {
+		return true
+	}
+	dayWord := regexp.MustCompile(`(^|\D)0?` + fmt.Sprint(t.Day()) + `\s+` + monthWords[t.Month()-1] + `\s+` + fmt.Sprint(t.Year()))
+	return dayWord.MatchString(f)
 }
 
-// ExcerptForModel — начало закона плюс конец (там обычно статья о вступлении в силу), чтобы не тратить лишние токены.
-func ExcerptForModel(text string, head, tail int) string {
-	r := []rune(text)
-	if len(r) <= head+tail {
-		return text
+// Fragment — нумерованный фрагмент текста закона; модель ссылается на номера, а не копирует текст.
+type Fragment struct {
+	N    int
+	Text string
+}
+
+var sentenceEnd = regexp.MustCompile(`([.;:]) (?:[А-ЯЁA-Z0-9]|«)`)
+
+// SplitFragments режет текст на фрагменты до maxRunes знаков по границам предложений.
+func SplitFragments(text string, maxRunes int) []Fragment {
+	var pieces []string
+	rest := text
+	for len(rest) > 0 {
+		loc := sentenceEnd.FindStringSubmatchIndex(rest)
+		if loc == nil {
+			pieces = append(pieces, rest)
+			break
+		}
+		cut := loc[3] // сразу после знака препинания
+		pieces = append(pieces, rest[:cut])
+		rest = strings.TrimLeft(rest[cut:], " ")
 	}
-	return string(r[:head]) + " [...] " + string(r[len(r)-tail:])
+	var out []Fragment
+	var cur strings.Builder
+	flush := func() {
+		if t := strings.TrimSpace(cur.String()); t != "" {
+			out = append(out, Fragment{N: len(out) + 1, Text: t})
+		}
+		cur.Reset()
+	}
+	for _, p := range pieces {
+		if cur.Len() > 0 && utf8.RuneCountInString(cur.String())+utf8.RuneCountInString(p) > maxRunes {
+			flush()
+		}
+		for utf8.RuneCountInString(p) > maxRunes { // очень длинное «предложение» режем жёстко
+			r := []rune(p)
+			cur.WriteString(string(r[:maxRunes]))
+			flush()
+			p = string(r[maxRunes:])
+		}
+		if cur.Len() > 0 {
+			cur.WriteByte(' ')
+		}
+		cur.WriteString(p)
+	}
+	flush()
+	return out
+}
+
+// FragmentsForModel — начало закона и его конец (там обычно вступление в силу) в пределах head+tail знаков.
+func FragmentsForModel(fr []Fragment, head, tail int) []Fragment {
+	total := 0
+	for _, f := range fr {
+		total += utf8.RuneCountInString(f.Text)
+	}
+	if total <= head+tail {
+		return fr
+	}
+	var out []Fragment
+	n := 0
+	i := 0
+	for ; i < len(fr) && n < head; i++ {
+		out = append(out, fr[i])
+		n += utf8.RuneCountInString(fr[i].Text)
+	}
+	m := 0
+	k := len(fr)
+	for k > i && m < tail {
+		k--
+		m += utf8.RuneCountInString(fr[k].Text)
+	}
+	return append(out, fr[k:]...)
 }

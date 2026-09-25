@@ -109,7 +109,7 @@ func (g *Ingester) one(ctx context.Context, d Doc, rep *Report) error {
 	var ex llm.LawDraft
 	for try := 0; ; try++ {
 		var usage llm.Usage
-		ex, usage, err = g.Extractor.ExtractLaw(ctx, llm.LawInput{Title: d.Title, Number: d.Number, Text: text})
+		ex, usage, err = g.Extractor.ExtractLaw(ctx, llm.LawInput{Title: d.Title, Number: d.Number, Fragments: llm.SplitFragments(text, 300)})
 		rep.PromptTokens += usage.PromptTokens
 		rep.CompletionTokens += usage.CompletionTokens
 		if !errors.Is(err, llm.ErrRateLimited) || try == 4 {
