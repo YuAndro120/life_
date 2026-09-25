@@ -27,3 +27,12 @@ make collect-loop   # сборщик в цикле
 - `-shtilSource fixtures` (DEBUG) — работать на встроенных фикстурах без сервера.
 
 Prod (docker-compose.prod.yml, Caddyfile) — фаза 7.
+
+## Деплой на сервер (shtil.tech)
+
+1. Один раз, от root: `ssh root@<сервер> 'bash -s' < infra/root-setup.sh`. Скрипт создаёт пользователя `shtilapp`,
+   добавляет swap, подключает сайт в существующий nginx (`nginx -t` перед reload) и выпускает сертификат Let's Encrypt.
+2. `infra/deploy.sh`: сборка образов под linux/amd64 на Mac, загрузка на сервер, `docker compose up`, синхронизация каталога.
+3. Проверка: `curl https://shtil.tech/v1/health`.
+- Наружу открыт только `/v1/` через nginx; PostgreSQL, сборщик и остальное — во внутренней сети Docker.
+- Демо-данные (не для постоянной работы): `ssh shtil-prod 'cd shtil && docker compose run --rm seed'`. Команда очищает таблицы данных.
