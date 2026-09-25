@@ -27,6 +27,11 @@ type LawChange struct {
 	Verified     bool
 	VerifiedAt   pgtype.Timestamptz
 	CreatedAt    pgtype.Timestamptz
+	EoNumber     pgtype.Text
+	SourceUrl    pgtype.Text
+	Quotes       []byte
+	Rejected     bool
+	RejectReason pgtype.Text
 }
 
 type LlmUsage struct {
