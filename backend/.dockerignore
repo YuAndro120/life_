@@ -1,0 +1,4 @@
+bin/
+.env*
+*.md
+**/*_test.go

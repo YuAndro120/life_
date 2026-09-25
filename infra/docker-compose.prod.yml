@@ -1,0 +1,116 @@
+# Продакшн-стек Штиль на общем сервере (проект `shtil`, свои сеть и тома).
+# Образы собираются на Mac и загружаются на сервер (docker load), сервер ничего не собирает и не скачивает.
+# Наружу ничего не опубликовано, кроме API на 127.0.0.1:8081 — дальше его проксирует nginx.
+name: shtil
+
+x-hardened: &hardened
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  pull_policy: never
+  networks: [internal]
+
+services:
+  postgres:
+    <<: *hardened
+    image: pgvector/pgvector:pg16
+    read_only: false # PostgreSQL пишет в каталог данных и сокеты
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID, FOWNER, DAC_OVERRIDE]
+    environment:
+      POSTGRES_USER: shtil
+      POSTGRES_DB: shtil
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=96MB
+      - -c
+      - effective_cache_size=384MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=48MB
+      - -c
+      - max_connections=20
+      - -c
+      - listen_addresses=*
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shtil -d shtil"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    mem_limit: 384m
+    shm_size: 64m
+
+  migrate:
+    <<: *hardened
+    restart: "no"
+    image: shtil/migrate:${SHTIL_VERSION:-dev}
+    environment:
+      GOOSE_DBSTRING: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+    depends_on:
+      postgres: {condition: service_healthy}
+    mem_limit: 64m
+
+  api:
+    <<: *hardened
+    image: shtil/api:${SHTIL_VERSION:-dev}
+    environment:
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+      API_ADDR: ":8080"
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    mem_limit: 96m
+    tmpfs: [/tmp]
+
+  collector:
+    <<: *hardened
+    image: shtil/collector:${SHTIL_VERSION:-dev}
+    command: ["run"]
+    environment:
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+      COLLECTOR_USER_AGENT: "ShtilBot/0.1 (personal news digest)"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    mem_limit: 96m
+    tmpfs: [/tmp]
+
+  # Разовые команды: docker compose run --rm sync-sources
+  sync-sources:
+    <<: *hardened
+    restart: "no"
+    image: shtil/collector:${SHTIL_VERSION:-dev}
+    command: ["sync"]
+    environment:
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    profiles: [tools]
+    mem_limit: 64m
+
+  seed:
+    <<: *hardened
+    restart: "no"
+    image: shtil/seed:${SHTIL_VERSION:-dev}
+    command: ["-yes"]
+    environment:
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+      ALLOW_SEED: "1"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    profiles: [tools]
+    mem_limit: 64m
+
+networks:
+  internal:
+    driver: bridge
+    internal: false # исходящий доступ нужен сборщику (RSS, Telegram)
+
+volumes:
+  pgdata:

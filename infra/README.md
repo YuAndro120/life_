@@ -14,16 +14,16 @@ make collect        # один проход сборщика по источни
 make collect-loop   # сборщик в цикле
 ```
 
-`DATABASE_URL` по умолчанию `postgres://life:life_dev@127.0.0.1:5432/life?sslmode=disable` (см. `backend/Makefile`).
+`DATABASE_URL` по умолчанию `postgres://shtil:shtil_dev@127.0.0.1:5432/shtil?sslmode=disable` (см. `backend/Makefile`).
 Быстрая проверка: `curl -s localhost:8080/v1/feed | jq .stats`.
 
 ## Приложение → сервер
 
-- Симулятор ходит на `http://127.0.0.1:8080` (build setting `API_BASE_URL` в `ios/Life/project.yml`).
+- Симулятор ходит на `http://127.0.0.1:8080` (build setting `API_BASE_URL` в `ios/Shtil/project.yml`).
 - Реальный iPhone: `127.0.0.1` — это сам телефон. Запусти API на Mac, узнай его адрес в сети (`ipconfig getifaddr en0`)
-  и передай в схеме Xcode аргумент `-lifeAPI http://<адрес>:8080` (Edit Scheme → Run → Arguments), либо поменяй `API_BASE_URL`.
+  и передай в схеме Xcode аргумент `-shtilAPI http://<адрес>:8080` (Edit Scheme → Run → Arguments), либо поменяй `API_BASE_URL`.
   Mac и iPhone должны быть в одной Wi-Fi сети, macOS-файрвол должен пускать входящие на порт 8080.
 - Без сервера приложение покажет последний сохранённый выпуск с плашкой «Нет связи».
-- `-lifeSource fixtures` (DEBUG) — работать на встроенных фикстурах без сервера.
+- `-shtilSource fixtures` (DEBUG) — работать на встроенных фикстурах без сервера.
 
 Prod (docker-compose.prod.yml, Caddyfile) — фаза 7.

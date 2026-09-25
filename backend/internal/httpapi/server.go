@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"life/backend/internal/api"
+	"shtil/backend/internal/api"
 )
 
 const (

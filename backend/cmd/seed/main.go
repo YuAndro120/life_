@@ -13,7 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"life/backend/internal/config"
+	"shtil/backend/internal/config"
 )
 
 type seedFile struct {
@@ -63,6 +63,10 @@ func main() {
 	file := flag.String("file", "seeds/dev.json", "файл с тестовыми данными")
 	yes := flag.Bool("yes", false, "подтвердить очистку таблиц данных")
 	flag.Parse()
+	if os.Getenv("ALLOW_SEED") != "1" {
+		fmt.Fprintln(os.Stderr, "seed очищает данные: разрешён только с ALLOW_SEED=1 (make seed ставит его сам)")
+		os.Exit(2)
+	}
 	if !*yes {
 		fmt.Fprintln(os.Stderr, "seed очищает sources, posts, stories, law_changes; добавьте -yes")
 		os.Exit(2)

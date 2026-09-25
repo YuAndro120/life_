@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"life/backend/internal/api"
-	"life/backend/internal/db/sqlcgen"
+	"shtil/backend/internal/api"
+	"shtil/backend/internal/db/sqlcgen"
 )
 
 type Postgres struct {

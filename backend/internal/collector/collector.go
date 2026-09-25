@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"life/backend/internal/ads"
-	"life/backend/internal/sources"
+	"shtil/backend/internal/ads"
+	"shtil/backend/internal/sources"
 )
 
 type Source struct {

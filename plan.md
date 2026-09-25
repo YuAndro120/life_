@@ -1,6 +1,6 @@
-# «Суть» — план MVP для iOS
+# «Штиль» — план MVP для iOS
 
-Рабочее название: **Суть**. Нативное iOS-приложение: спокойный новостной дайджест и персональный блок изменений в законах.
+Название: **Штиль** (домен shtil.tech). Нативное iOS-приложение: спокойный новостной дайджест и персональный блок изменений в законах.
 Этот документ — единый источник правды для разработки в Claude Code. Работаем по фазам сверху вниз, каждая фаза заканчивается проверяемым результатом.
 
 Макет дизайна (все экраны, темы, онбординг): https://claude.ai/artifact/7Kb1uD4cYoFEbiXjGm5nd1
@@ -14,7 +14,7 @@
 
 ## 2. Ключевые решения (не пересматривать без причины)
 
-| Решение | Суть |
+| Решение | Описание |
 |---|---|
 | Платформа | Только iOS, нативно. Swift 6 + SwiftUI, iOS 17+ |
 | Распространение | Без App Store. Этап 1: установка через Xcode с бесплатным Apple ID (приложение живёт 7 дней, push недоступен). Этап 2: платный аккаунт ($99) → TestFlight/Ad Hoc для друзей |
@@ -75,14 +75,15 @@
 ## 5. Структура репозитория
 
 ```
-sut/
+shtil/
 ├── CLAUDE.md                 # правила для Claude Code
 ├── plan.md                   # этот файл
 ├── design/                   # копии макетов .dc.html
+├── assets/                   # иконка: AppIcon.appiconset + SVG-исходники
 ├── ios/
-│   └── Life/
-│       ├── Life.xcodeproj
-│       ├── App/              # LifeApp.swift, корневая навигация, DI
+│   └── Shtil/
+│       ├── Shtil.xcodeproj
+│       ├── App/              # ShtilApp.swift, корневая навигация, DI
 │       ├── Core/
 │       │   ├── Theme/        # токены трёх тем, шрифты, модификаторы
 │       │   ├── Networking/   # APIClient (URLSession), модели DTO, pinning
@@ -264,7 +265,7 @@ region:<код>               # региональные акты
 **Уведомления:**
 - `UNUserNotificationCenter`: «Выпуск готов» в выбранные часы (`UNCalendarNotificationTrigger`, repeats).
 - Напоминания о законах за 7 дней до `effective_at`. Если осталось меньше 7 дней, напомнить накануне.
-- `BGAppRefreshTask` (`com.sut.refresh`): подтянуть `/v1/feed` и `/v1/laws` заранее. Info.plist: `BGTaskSchedulerPermittedIdentifiers`, `UIBackgroundModes: fetch`.
+- `BGAppRefreshTask` (`com.shtil.refresh`): подтянуть `/v1/feed` и `/v1/laws` заранее. Info.plist: `BGTaskSchedulerPermittedIdentifiers`, `UIBackgroundModes: fetch`.
 
 **Безопасность:**
 - ATS по умолчанию (только HTTPS), certificate/public-key pinning в `URLSessionDelegate` (pin на ключ промежуточного/листового сертификата с запасным пином).
@@ -300,8 +301,11 @@ region:<код>               # региональные акты
 
 **Формы:** чипы и сегменты — капсулы (radius 999); карточки 18 (Шалфей 22); подложка 26 (Шалфей 30); главная кнопка 18, высота 58; минимальная зона нажатия 44×44.
 
-**Типографика (Бумага/Сумерки):** логотип «Суть.» 76 bold, трекинг −0.065em; H1 44–48 bold, −0.055em; цифры-итоги 44 semibold tabular; заголовок закона 23–24 semibold, −0.03em; заголовок сюжета 21 semibold; текст 15–16; метаданные — моно 11 заглавными.
+**Типографика (Бумага/Сумерки):** логотип «Штиль.» 62 bold (на заставке 86), трекинг −0.065em; H1 44–48 bold, −0.055em; цифры-итоги 44 semibold tabular; заголовок закона 23–24 semibold, −0.03em; заголовок сюжета 21 semibold; текст 15–16; метаданные — моно 11 заглавными.
 **Шалфей:** H1 Spectral 40 medium, вторая строка italic muted; вместо моно-меток обычный регистр 13pt; отсчёт словами («через 6 дней»).
+
+**Иконка приложения** (выбрана концепция «Монограмма»): буква «Ш» из скруглённых линий #ECEAE4 на графитовом #1C1D22, барвинковая «луна» #A9B3FF.
+Готовый набор лежит в `assets/AppIcon.appiconset/`: обычная, тёмная (прозрачный фон) и tinted (оттенки серого) версии 1024×1024 и `Contents.json` в формате Xcode 16. Он подключён в `ios/Shtil/Resources/Assets.xcassets/`. Исходники SVG лежат в `assets/source/`.
 
 **Экраны (ориентир — макет):** Welcome, Profile, Calm, Theme (живая перекраска при выборе), Building (анимация 38 → 19 → 3), Today, LawDetail, Calendar, Filters. Таб-бар: Бумага/Сумерки — текстовый с линией сверху у активного; Шалфей — плавающая капсула.
 
@@ -332,7 +336,7 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 
 **Установка на iPhone без App Store:**
 1. Xcode → Settings → Accounts → добавить Apple ID (Personal Team).
-2. Target → Signing & Capabilities → Team = Personal Team, уникальный Bundle ID (например `ru.andronov.life`).
+2. Target → Signing & Capabilities → Team = Personal Team, уникальный Bundle ID (`ru.andronov.shtil`).
 3. На iPhone: Настройки → Конфиденциальность и безопасность → Режим разработчика → вкл., перезагрузка.
 4. Подключить iPhone кабелем (потом можно по Wi-Fi: Window → Devices and Simulators → Connect via network), выбрать устройство и нажать Run.
 5. На iPhone: Настройки → Основные → VPN и управление устройством → доверять разработчику.
@@ -413,7 +417,7 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 
 > Решения, принятые вне плана и подлежащие проверке на реальном iPhone, собраны в [revisit.md](revisit.md).
 
-- Финальное название: **пока «Life»** (решение 2026-09-25). В макетах и тексте интерфейса остаётся «Суть.» до отдельного решения о ребрендинге; Bundle ID — `ru.andronov.life`, целевое имя Xcode-проекта `Life`.
+- Название: **Штиль** (решение 2026-09-25, выбрано вместо рабочего «Суть» и временного «Life»). Открыто: проверка товарного знака «Штиль» в ФИПС (классы 9, 38, 41).
 - Пункт «Срочные уведомления → Ключевые слова» в Фильтрах: показывается **неактивным** (APNs после MVP), решение 2026-09-25.
 - Список регионов и региональных источников для MVP.
 - Провайдер LLM для прода: GigaChat, YandexGPT или своя модель на GPU-сервере.

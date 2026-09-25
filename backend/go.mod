@@ -1,4 +1,4 @@
-module life/backend
+module shtil/backend
 
 go 1.27
 

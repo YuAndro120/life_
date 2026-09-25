@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"life/backend/internal/api"
+	"shtil/backend/internal/api"
 )
 
 type fakeStore struct {
