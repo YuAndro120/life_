@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"shtil/backend/internal/llm"
+	"shtil/backend/internal/llm/tasks"
 )
 
 const goodTitle = "Банк России сохранил ключевую ставку на уровне 16 процентов годовых"
@@ -281,11 +282,11 @@ func TestInputIsCapped(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		posts = append(posts, llm.Post{SourceTitle: "s", SourceKind: "rss", PublishedAt: time.Now(), Text: long})
 	}
-	msg := userMessage(llm.StoryInput{Posts: posts})
-	if strings.Count(msg, "Пост ") != maxPosts {
-		t.Errorf("постов в запросе %d, ожидалось %d", strings.Count(msg, "Пост "), maxPosts)
+	msg := tasks.DigestUser(llm.StoryInput{Posts: posts})
+	if strings.Count(msg, "Пост ") != tasks.MaxPosts {
+		t.Errorf("постов в запросе %d, ожидалось %d", strings.Count(msg, "Пост "), tasks.MaxPosts)
 	}
-	if n := len([]rune(msg)); n > maxPosts*(maxRunesPerPost+100) {
+	if n := len([]rune(msg)); n > tasks.MaxPosts*(tasks.MaxRunesPerPost+100) {
 		t.Errorf("запрос слишком длинный: %d символов", n)
 	}
 }

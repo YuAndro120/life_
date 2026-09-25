@@ -20,13 +20,11 @@ import (
 	"time"
 
 	"shtil/backend/internal/llm"
+	"shtil/backend/internal/llm/tasks"
 )
 
 //go:embed russian_trusted_root_ca.pem
 var russianRootCA []byte
-
-//go:embed digest_system.txt
-var systemPrompt string
 
 type Config struct {
 	// AuthKey — ключ авторизации (base64 от «client_id:secret») из личного кабинета Сбера. Только из переменной окружения.
@@ -202,67 +200,6 @@ type chatResponse struct {
 	} `json:"usage"`
 }
 
-const functionName = "publish_story"
-
-func digestFunction() chatFunction {
-	enum := func(vals []string) map[string]any { return map[string]any{"type": "string", "enum": vals} }
-	return chatFunction{
-		Name:        functionName,
-		Description: "Записать нейтральный заголовок, пересказ и классификацию сюжета",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"topic":         enum(llm.Topics),
-				"info_type":     enum(llm.InfoTypes),
-				"heaviness":     enum(llm.Heavinesss),
-				"region_code":   map[string]any{"type": "string", "description": "только цифры кода региона России (например 78), без названия; или пустая строка"},
-				"title":         map[string]any{"type": "string", "description": "нейтральный заголовок, 8–14 слов"},
-				"summary":       map[string]any{"type": "string", "description": "2–3 предложения о том, что произошло"},
-				"meaning":       map[string]any{"type": "string", "description": "что это значит для обычного человека, или пустая строка"},
-				"is_newsworthy": map[string]any{"type": "boolean", "description": "true, если это новость для широкой аудитории; false для технических страниц, таблиц, регламентных объявлений"},
-			},
-			"required": []string{"topic", "info_type", "heaviness", "title", "summary", "is_newsworthy"},
-		},
-	}
-}
-
-// minRunesForMeaning — меньше этого объёма текста в постах вывод «что это значит» не строится.
-const minRunesForMeaning = 300
-
-func sourceRunes(in llm.StoryInput) int {
-	n := 0
-	for _, p := range in.Posts {
-		n += len([]rune(p.Text))
-	}
-	return n
-}
-
-// Дешёвый предел на вход: не больше стольких постов и символов на пост уходит в модель.
-const (
-	maxPosts        = 6
-	maxRunesPerPost = 1200
-)
-
-func userMessage(in llm.StoryInput) string {
-	var b strings.Builder
-	posts := in.Posts
-	if len(posts) > maxPosts {
-		posts = posts[:maxPosts]
-	}
-	for i, p := range posts {
-		text := []rune(p.Text)
-		if len(text) > maxRunesPerPost {
-			text = text[:maxRunesPerPost]
-		}
-		lang := p.Lang
-		if lang == "" {
-			lang = "ru"
-		}
-		fmt.Fprintf(&b, "Пост %d. Источник: %s (%s), язык %s, %s\n%s\n\n", i+1, p.SourceTitle, p.SourceKind, lang, p.PublishedAt.UTC().Format("2006-01-02 15:04"), string(text))
-	}
-	return strings.TrimSpace(b.String())
-}
-
 // Digest просит модель обработать сюжет. При некорректном ответе повторяет запрос (до MaxAttempts),
 // но исправлять ответ догадками не пытается.
 func (c *Client) Digest(ctx context.Context, in llm.StoryInput) (llm.Digest, llm.Usage, error) {
@@ -272,13 +209,13 @@ func (c *Client) Digest(ctx context.Context, in llm.StoryInput) (llm.Digest, llm
 	reqBody, err := json.Marshal(chatRequest{
 		Model: c.cfg.Model,
 		Messages: []chatMessage{
-			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: userMessage(in)},
+			{Role: "system", Content: tasks.DigestSystem},
+			{Role: "user", Content: tasks.DigestUser(in)},
 		},
-		Functions:    []chatFunction{digestFunction()},
-		FunctionCall: map[string]any{"name": functionName},
+		Functions:    []chatFunction{toFunction(tasks.DigestSchema())},
+		FunctionCall: map[string]any{"name": tasks.DigestFunction},
 		Temperature:  0.1,
-		MaxTokens:    700,
+		MaxTokens:    tasks.DigestMaxTokens,
 	})
 	if err != nil {
 		return llm.Digest{}, llm.Usage{}, err
@@ -294,63 +231,19 @@ func (c *Client) Digest(ctx context.Context, in llm.StoryInput) (llm.Digest, llm
 		total.PromptTokens += resp.Usage.PromptTokens
 		total.CompletionTokens += resp.Usage.CompletionTokens
 
-		d, err := parseDigest(resp)
+		args, err := functionArgs(resp, tasks.DigestFunction)
 		if err == nil {
-			if err = d.Validate(); err == nil {
-				if reason := d.SanitizeMeaning(); reason != "" {
-					c.cfg.Log.Info("«значит» отброшено", "причина", reason)
+			var d llm.Digest
+			if d, err = tasks.ParseDigest(args); err == nil {
+				if err = tasks.FinishDigest(&d, in, c.cfg.Log.Info); err == nil {
+					return d, total, nil
 				}
-				// Политика: если в источниках только заголовки, «что это значит» модель может лишь домыслить, поэтому его нет.
-				if sourceRunes(in) < minRunesForMeaning && d.Meaning != "" {
-					c.cfg.Log.Info("«значит» отброшено: в источниках только заголовок")
-					d.Meaning = ""
-				}
-				return d, total, nil
 			}
 		}
 		lastErr = err
 		c.cfg.Log.Warn("модель вернула некорректный ответ", "attempt", attempt, "err", err)
 	}
 	return llm.Digest{}, total, fmt.Errorf("%w: %v", llm.ErrInvalid, lastErr)
-}
-
-func parseDigest(resp chatResponse) (llm.Digest, error) {
-	if len(resp.Choices) == 0 {
-		return llm.Digest{}, errors.New("пустой список choices")
-	}
-	fc := resp.Choices[0].Message.FunctionCall
-	if fc == nil || fc.Name != functionName {
-		return llm.Digest{}, errors.New("модель не вызвала функцию")
-	}
-	args := fc.Arguments
-	// Аргументы приходят объектом; на случай строки с JSON внутри разворачиваем её.
-	var asString string
-	if json.Unmarshal(args, &asString) == nil {
-		args = json.RawMessage(asString)
-	}
-	var raw struct {
-		Topic      string `json:"topic"`
-		InfoType   string `json:"info_type"`
-		Heaviness  string `json:"heaviness"`
-		RegionCode string `json:"region_code"`
-		Title      string `json:"title"`
-		Summary    string `json:"summary"`
-		Meaning    string `json:"meaning"`
-		Newsworthy *bool  `json:"is_newsworthy"`
-	}
-	dec := json.NewDecoder(bytes.NewReader(args))
-	if err := dec.Decode(&raw); err != nil {
-		return llm.Digest{}, fmt.Errorf("аргументы функции не JSON: %w", err)
-	}
-	if raw.Newsworthy == nil {
-		return llm.Digest{}, errors.New("нет поля is_newsworthy")
-	}
-	return llm.Digest{
-		Newsworthy: *raw.Newsworthy,
-		Topic:      strings.TrimSpace(raw.Topic), InfoType: strings.TrimSpace(raw.InfoType), Heaviness: strings.TrimSpace(raw.Heaviness),
-		RegionCode: strings.TrimSpace(raw.RegionCode), Title: strings.TrimSpace(raw.Title),
-		Summary: strings.TrimSpace(raw.Summary), Meaning: strings.TrimSpace(raw.Meaning),
-	}, nil
 }
 
 // chat отправляет запрос. Повторяет при 429 и 5xx с нарастающей паузой; при 401 один раз обновляет токен.
@@ -405,4 +298,20 @@ func (c *Client) chat(ctx context.Context, body []byte) (chatResponse, error) {
 		}
 	}
 	return chatResponse{}, lastErr
+}
+
+func toFunction(s tasks.Schema) chatFunction {
+	return chatFunction{Name: s.Name, Description: s.Description, Parameters: s.Parameters}
+}
+
+// functionArgs достаёт аргументы вызванной функции из ответа.
+func functionArgs(resp chatResponse, name string) (json.RawMessage, error) {
+	if len(resp.Choices) == 0 {
+		return nil, errors.New("пустой список choices")
+	}
+	fc := resp.Choices[0].Message.FunctionCall
+	if fc == nil || fc.Name != name {
+		return nil, errors.New("модель не вызвала функцию")
+	}
+	return fc.Arguments, nil
 }
