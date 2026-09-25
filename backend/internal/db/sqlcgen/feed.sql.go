@@ -43,6 +43,8 @@ SELECT
     s.post_count,
     s.source_count,
     s.region_code,
+    s.country,
+    s.lang,
     s.updated_at,
     COALESCE((
         SELECT jsonb_agg(jsonb_build_object('title', src.title, 'url', fp.url) ORDER BY src.title)
@@ -72,6 +74,8 @@ type ListPublishedStoriesRow struct {
 	PostCount    int32
 	SourceCount  int32
 	RegionCode   pgtype.Text
+	Country      pgtype.Text
+	Lang         string
 	UpdatedAt    pgtype.Timestamptz
 	Sources      []byte
 }
@@ -97,6 +101,8 @@ func (q *Queries) ListPublishedStories(ctx context.Context, since pgtype.Timesta
 			&i.PostCount,
 			&i.SourceCount,
 			&i.RegionCode,
+			&i.Country,
+			&i.Lang,
 			&i.UpdatedAt,
 			&i.Sources,
 		); err != nil {

@@ -65,3 +65,23 @@ func TestLatinAndEmpty(t *testing.T) {
 		t.Error("пустой текст даёт признаки")
 	}
 }
+
+func TestEnglishMorphology(t *testing.T) {
+	base := stems("launch")[0]
+	for _, w := range []string{"launches", "launched", "launching"} {
+		if got := stems(w)[0]; got != base {
+			t.Errorf("%q -> %q, ожидалось %q", w, got, base)
+		}
+	}
+	if stems("rockets")[0] != stems("rocket")[0] {
+		t.Error("rockets/rocket должны совпасть")
+	}
+	if got := stems("is")[0:0]; len(got) != 0 { // стоп-слово убирается
+		t.Error("unreachable")
+	}
+	for _, s := range stems("NASA said the mission will launch after the tests") {
+		if s == "said" || s == "the" || s == "will" || s == "after" {
+			t.Errorf("английское стоп-слово осталось: %q", s)
+		}
+	}
+}

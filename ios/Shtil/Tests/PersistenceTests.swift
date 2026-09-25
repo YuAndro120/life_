@@ -52,4 +52,38 @@ import Testing
         try context.save()
         #expect(try context.fetch(FetchDescriptor<CachedLaw>()).count == 1)
     }
+
+    @Test func interestsAndMutesRoundTrip() {
+        let settings = FilterSettings()
+        var p = settings.preferences
+        p.countries = ["RU", "US", "GB"]
+        p.interests = [.space, .science]
+        p.onlyInterests = true
+        p.mutedSources = ["Шумный", "Другой"]
+        p.hiddenStories = ["st_1", "st_2"]
+        p.storyLimit = 8
+        settings.preferences = p
+        #expect(settings.preferences == p)
+        #expect(settings.preferences.storyLimit == 8)
+    }
+
+    @Test func hiddenStoriesKeepOrderAndAreCapped() {
+        let settings = FilterSettings()
+        var p = settings.preferences
+        p.hiddenStories = Set((1...(FilterSettings.hiddenLimit + 20)).map { "st_\($0)" })
+        settings.preferences = p
+        #expect(settings.hiddenStories.count == FilterSettings.hiddenLimit)
+        var q = settings.preferences
+        q.hiddenStories.insert("st_new")
+        settings.preferences = q
+        #expect(settings.hiddenStories.last == "st_new", "новое скрытие добавляется в конец")
+        #expect(settings.hiddenStories.count == FilterSettings.hiddenLimit)
+    }
+
+    @Test func defaultsForNewFieldsAreConservative() {
+        let s = FilterSettings()
+        #expect(s.preferences.countries == ["RU"])
+        #expect(s.preferences.interests.isEmpty && !s.preferences.onlyInterests)
+        #expect(s.preferences.storyLimit == 15)
+    }
 }

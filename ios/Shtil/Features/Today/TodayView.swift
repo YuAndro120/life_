@@ -44,6 +44,17 @@ struct TodayView: View {
         .scrollIndicators(.hidden)
         .screenBackground(theme)
         .refreshable { await model.refresh() }
+        .overlay(alignment: .bottom) {
+            if let undo = model.undo {
+                UndoBar(message: undo.message) { withAnimation { model.undoLast() } }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .task(id: undo) {
+                        try? await Task.sleep(for: .seconds(5))
+                        if !Task.isCancelled { withAnimation { model.clearUndo() } }
+                    }
+            }
+        }
+        .animation(.easeOut(duration: 0.25), value: model.undo)
     }
 
     // MARK: шапка
@@ -260,11 +271,11 @@ struct TodayView: View {
 
             ForEach(Array(e.stories.enumerated()), id: \.element.id) { index, story in
                 if theme.id != .sage { Rule(strong: index == 0) } else if index > 0 { Rule() }
-                StoryRow(story: story)
+                StoryRow(story: story, isInterest: e.interestIDs.contains(story.id), interests: model.settings.preferences.interests) { model.apply($0) }
             }
 
             if !e.foldedHeavy.isEmpty {
-                HeavyBlock(stories: e.foldedHeavy)
+                HeavyBlock(stories: e.foldedHeavy) { model.apply($0) }
             }
         }
         .padding(.horizontal, 20)
@@ -365,22 +376,34 @@ struct LawCard: View {
 struct StoryRow: View {
     @Environment(\.theme) private var theme
     let story: Story
+    var isInterest = false
+    var interests: Set<Topic> = []
+    var onFeedback: (FeedbackAction) -> Void = { _ in }
 
     private var meta: String {
-        theme.id == .sage
+        var text = theme.id == .sage
             ? "\(story.topic.title) · \(story.infoType.title.lowercased())"
             : "\(story.topic.title) / \(story.infoType.title)"
+        if story.countryCode != "RU", let country = NewsCountry(rawValue: story.countryCode) {
+            text += " · \(country.title)"
+        }
+        return text
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            HStack(spacing: 0) {
                 HStack(spacing: 8) {
-                    if theme.id == .sage { Circle().fill(theme.muted).frame(width: 6, height: 6) }
-                    Text(meta).metaStyle()
+                    if isInterest {
+                        Circle().fill(theme.accent).frame(width: 7, height: 7).accessibilityHidden(true)
+                    } else if theme.id == .sage {
+                        Circle().fill(theme.muted).frame(width: 6, height: 6)
+                    }
+                    Text(meta).metaStyle(color: isInterest ? theme.accentDeep : nil)
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 Text("\(story.postCount) → 1").metaStyle()
+                StoryMenu(story: story, interests: interests, onFeedback: onFeedback)
             }
             Text(story.title)
                 .font(theme.fonts.heading(theme.id == .sage ? 22 : 21, .semibold))
@@ -396,11 +419,12 @@ struct StoryRow: View {
             }
             if !story.sources.isEmpty {
                 HStack(spacing: 12) {
-                    ForEach(story.sources, id: \.url) { source in
+                    ForEach(story.sources.prefix(3), id: \.url) { source in
                         Link(destination: source.url) {
                             Text("\(source.title) ↗")
                                 .font(theme.id == .sage ? theme.fonts.body(13) : ThemeFonts.mono(11))
                                 .foregroundStyle(theme.muted)
+                                .lineLimit(1)
                                 .frame(minHeight: 32)
                         }
                     }
@@ -409,6 +433,75 @@ struct StoryRow: View {
         }
         .padding(.top, 18).padding(.bottom, theme.id == .sage ? 22 : 14)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contextMenu { StoryMenuItems(story: story, interests: interests, onFeedback: onFeedback) }
+    }
+}
+
+/// Меню «···» у сюжета: не интересно, меньше или больше про тему, скрыть источник.
+struct StoryMenu: View {
+    @Environment(\.theme) private var theme
+    let story: Story
+    let interests: Set<Topic>
+    let onFeedback: (FeedbackAction) -> Void
+
+    var body: some View {
+        Menu {
+            StoryMenuItems(story: story, interests: interests, onFeedback: onFeedback)
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(theme.muted)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Не интересно, ещё")
+    }
+}
+
+struct StoryMenuItems: View {
+    let story: Story
+    let interests: Set<Topic>
+    let onFeedback: (FeedbackAction) -> Void
+
+    var body: some View {
+        Button { onFeedback(.hideStory(id: story.id)) } label: {
+            Label("Не интересно: скрыть сюжет", systemImage: "eye.slash")
+        }
+        Button { onFeedback(.muteTopic(story.topic)) } label: {
+            Label("Меньше про «\(story.topic.title)»", systemImage: "hand.thumbsdown")
+        }
+        if !interests.contains(story.topic) {
+            Button { onFeedback(.boostTopic(story.topic)) } label: {
+                Label("Больше про «\(story.topic.title)»", systemImage: "hand.thumbsup")
+            }
+        }
+        ForEach(story.sources.prefix(3), id: \.url) { source in
+            Button { onFeedback(.muteSource(source.title)) } label: {
+                Label("Скрыть источник «\(source.title)»", systemImage: "nosign")
+            }
+        }
+    }
+}
+
+/// Панель после действия: «Сюжет скрыт · Отменить». Исчезает сама через 5 секунд.
+struct UndoBar: View {
+    @Environment(\.theme) private var theme
+    let message: String
+    let undo: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(message).font(theme.fonts.body(14, .medium)).foregroundStyle(theme.buttonText).lineLimit(2)
+            Spacer(minLength: 8)
+            Button("Отменить", action: undo)
+                .font(theme.fonts.body(14, .semibold)).foregroundStyle(theme.buttonText.opacity(0.9))
+                .frame(minHeight: 44)
+        }
+        .padding(.horizontal, 18)
+        .background(Capsule().fill(theme.buttonBg))
+        .padding(.horizontal, 16).padding(.bottom, 10)
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -417,6 +510,7 @@ struct StoryRow: View {
 struct HeavyBlock: View {
     @Environment(\.theme) private var theme
     let stories: [Story]
+    var onFeedback: (FeedbackAction) -> Void = { _ in }
     @State private var expanded = false
     @State private var showAll = false
 
@@ -459,7 +553,7 @@ struct HeavyBlock: View {
                     } else {
                         ForEach(stories) { story in
                             Rule()
-                            StoryRow(story: story)
+                            StoryRow(story: story, onFeedback: onFeedback)
                         }
                     }
                 }

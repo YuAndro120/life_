@@ -29,6 +29,12 @@ type LawChange struct {
 	CreatedAt    pgtype.Timestamptz
 }
 
+type LlmUsage struct {
+	Day              pgtype.Date
+	PromptTokens     int64
+	CompletionTokens int64
+}
+
 type Post struct {
 	ID          int64
 	SourceID    int64
@@ -58,6 +64,8 @@ type Source struct {
 	LastFetchedAt       pgtype.Timestamptz
 	LastError           pgtype.Text
 	ConsecutiveFailures int32
+	Country             pgtype.Text
+	Lang                string
 }
 
 type Story struct {
@@ -81,6 +89,8 @@ type Story struct {
 	DigestError       pgtype.Text
 	DigestAt          pgtype.Timestamptz
 	HasOfficialSource bool
+	Country           pgtype.Text
+	Lang              string
 }
 
 type StoryPost struct {

@@ -64,6 +64,14 @@ func TestAbbreviationsAreNotShouting(t *testing.T) {
 	}
 }
 
+func TestSpaceTopicIsValid(t *testing.T) {
+	d := good()
+	d.Topic = "space"
+	if err := d.Validate(); err != nil {
+		t.Fatalf("тема space должна быть допустима: %v", err)
+	}
+}
+
 func TestFactualMeaningIsAllowed(t *testing.T) {
 	d := good()
 	d.Meaning = "Ставка по вкладам и кредитам в ближайшие недели заметно не изменится, как отметил регулятор."
@@ -92,5 +100,18 @@ func TestSanitizeMeaning(t *testing.T) {
 		if (reason != "") != c.dropped || (c.dropped && d.Meaning != "") || (!c.dropped && d.Meaning != c.meaning) {
 			t.Errorf("%s: причина=%q, значит=%q", c.name, reason, d.Meaning)
 		}
+	}
+}
+
+func TestMixedScriptWordsRejected(t *testing.T) {
+	bad := good()
+	bad.Title = "Данни Тommo обвиняют в порче лодки в канале при съёмках фильма" // русская «Т» + латиница
+	if err := bad.Validate(); err == nil {
+		t.Error("смешение алфавитов внутри слова должно отклоняться")
+	}
+	ok := good()
+	ok.Title = "NASA объявило состав экипажа SpaceX Crew-14 для миссии на МКС в ноябре"
+	if err := ok.Validate(); err != nil {
+		t.Errorf("слова целиком латиницей допустимы: %v", err)
 	}
 }

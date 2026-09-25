@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -40,15 +41,16 @@ func main() {
 	window := fs.Duration("window", cluster.DefaultConfig().Window, "окно склейки")
 	hours := fs.Int("hours", 36, "за сколько часов показывать посты (debug-clusters)")
 	batch := fs.Int("batch", 20, "сколько сюжетов пересказывать за проход (ограничивает расход токенов)")
+	budget := fs.Int64("daily-tokens", envInt("WORKER_DAILY_TOKENS", 100000), "дневной лимит токенов модели, 0 — без ограничения")
 	_ = fs.Parse(os.Args[2:])
 
-	if err := run(cmd, *interval, *threshold, *window, *hours, *batch); err != nil {
+	if err := run(cmd, *interval, *threshold, *window, *hours, *batch, *budget); err != nil {
 		slog.Error("worker", "err", err)
 		os.Exit(1)
 	}
 }
 
-func run(cmd string, interval time.Duration, threshold float64, window time.Duration, hours, batch int) error {
+func run(cmd string, interval time.Duration, threshold float64, window time.Duration, hours, batch int, budget int64) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -85,6 +87,7 @@ func run(cmd string, interval time.Duration, threshold float64, window time.Dura
 	w := pipeline.New(store, client, slog.Default())
 	w.Cluster = clusterCfg
 	w.Batch = batch
+	w.DailyTokenBudget = budget
 
 	report := func(s pipeline.Summary) {
 		slog.Info("проход завершён",
@@ -116,6 +119,13 @@ func run(cmd string, interval time.Duration, threshold float64, window time.Dura
 	default:
 		return fmt.Errorf("неизвестная команда %q", cmd)
 	}
+}
+
+func envInt(name string, def int64) int64 {
+	if v, err := strconv.ParseInt(os.Getenv(name), 10, 64); err == nil {
+		return v
+	}
+	return def
 }
 
 func debugClusters(ctx context.Context, store *pipeline.PGStore, cfg cluster.Config, hours int) error {

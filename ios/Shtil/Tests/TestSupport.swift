@@ -15,12 +15,15 @@ enum TestData {
         updated: String = "2026-09-25T01:00:00Z",
         title: String = "Заголовок",
         summary: String = "Краткое содержание",
-        meaning: String? = nil
+        meaning: String? = nil,
+        country: String? = nil,
+        sourceTitles: [String] = []
     ) -> Story {
         Story(
             id: id, topic: topic, infoType: type, heaviness: heaviness, title: title,
             meaning: meaning, summary: summary, postCount: sources * 2, sourceCount: sources,
-            sources: [], regionCode: nil, updatedAt: date(updated)
+            sources: sourceTitles.map { SourceLink(title: $0, url: URL(string: "https://example.org/\($0.count)")!) },
+            regionCode: nil, country: country, lang: country == nil || country == "RU" ? "ru" : "en", updatedAt: date(updated)
         )
     }
 

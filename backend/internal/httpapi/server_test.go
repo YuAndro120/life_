@@ -98,7 +98,7 @@ func TestFeedShapeAndDefaultWindow(t *testing.T) {
 	}
 	stories := raw["stories"].([]any)
 	first := stories[0].(map[string]any)
-	for _, key := range []string{"id", "topic", "info_type", "heaviness", "title", "meaning", "summary", "post_count", "source_count", "sources", "region_code", "updated_at"} {
+	for _, key := range []string{"id", "topic", "info_type", "heaviness", "title", "meaning", "summary", "post_count", "source_count", "sources", "region_code", "country", "lang", "updated_at"} {
 		if _, ok := first[key]; !ok {
 			t.Errorf("в сюжете нет поля %q", key)
 		}

@@ -28,6 +28,7 @@ type Doc struct {
 	ID       int64
 	SourceID int64
 	Text     string
+	Lang     string // язык поста: склеиваются только посты одного языка
 	At       time.Time
 }
 
@@ -75,7 +76,7 @@ func Assign(cfg Config, existing []Story, fresh []Doc) ([]Assignment, []Story) {
 		v := vectorize(cfg, idf, d.Text)
 		best, bestScore := -1, 0.0
 		for i, s := range stories {
-			if d.At.Sub(lastAt(s)) > cfg.Window {
+			if d.At.Sub(lastAt(s)) > cfg.Window || !sameLang(s, d) {
 				continue
 			}
 			if score := cosine(v, centroids[i]); score > bestScore {
@@ -94,6 +95,14 @@ func Assign(cfg Config, existing []Story, fresh []Doc) ([]Assignment, []Story) {
 		nextTemp--
 	}
 	return out, stories
+}
+
+// sameLang: русские и иностранные посты одного события без эмбеддингов не склеить, поэтому не пытаемся.
+func sameLang(s Story, d Doc) bool {
+	if len(s.Docs) == 0 || s.Docs[0].Lang == "" || d.Lang == "" {
+		return true
+	}
+	return s.Docs[0].Lang == d.Lang
 }
 
 func lastAt(s Story) time.Time {

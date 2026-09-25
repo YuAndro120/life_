@@ -5,37 +5,55 @@
 #   * Проверять перед добавлением и периодически после; дату обновлять при каждой проверке.
 #
 # Формат: kind = rss | gov | tg | site (site пока не поддерживается сборщиком).
-#         Для tg достаточно handle, адрес превью t.me/s/<handle> подставится сам.
+#   gov — официальный источник (государственный орган или межправительственная организация): сюжет из него
+#         публикуется и с одним источником. Остальным нужно ≥ 2 разных источника.
+#   country — страна издания (RU, US, GB, EU), lang — язык (по умолчанию ru). Пересказ всегда по-русски.
+#   Для tg достаточно handle, адрес превью t.me/s/<handle> подставится сам.
+#
+# Проверка 25.09.2026 (legal_checked: 2026-09-25) выполнена по: (1) списку нежелательных организаций
+# (версия от 28.08.2026, 393 записи) и (2) списку иноагентов / СМИ-иноагентов; названия изданий в них не найдены.
+# Ограничение проверки: официальные файлы Минюста (XLS) автоматически не скачивались, использованы их
+# публикации; для юридически значимых решений проверьте на minjust.gov.ru.
 sources:
-  # --- Государственные органы: официальные сайты ---
-  - kind: gov
-    handle: cbr
-    url: https://www.cbr.ru/rss/RssNews
-    title: Банк России
-    topic_hint: economy
-    active: true
-    legal_checked: 2026-09-25
-    note: Официальный сайт государственного органа, в реестрах быть не может.
-  - kind: gov
-    handle: government
-    url: http://government.ru/all/rss/
-    title: Правительство России
-    topic_hint: law
-    active: true
-    legal_checked: 2026-09-25
-    note: Официальный сайт государственного органа, в реестрах быть не может.
+  # --- Государственные органы: официальные сайты (Россия) ---
+  - {kind: gov, handle: cbr, url: "https://www.cbr.ru/rss/RssNews", title: Банк России, topic_hint: economy, country: RU, active: true, legal_checked: 2026-09-25, note: "Официальный сайт государственного органа."}
+  - {kind: gov, handle: government, url: "http://government.ru/all/rss/", title: Правительство России, topic_hint: law, country: RU, active: true, legal_checked: 2026-09-25, note: "Официальный сайт государственного органа."}
 
-  # --- СМИ: адреса лент проверены (отвечают, отдают записи), а вот проверка по реестрам за владельцем ---
-  - {kind: rss, handle: tass, url: "https://tass.ru/rss/v2.xml", title: ТАСС, active: true}
-  - {kind: rss, handle: ria, url: "https://ria.ru/export/rss2/archive/index.xml", title: РИА Новости, active: true}
-  - {kind: rss, handle: interfax, url: "https://www.interfax.ru/rss.asp", title: Интерфакс, active: true}
-  - {kind: rss, handle: kommersant, url: "https://www.kommersant.ru/RSS/news.xml", title: Коммерсантъ, topic_hint: economy, active: true, note: "лента большая (около 500 записей); при частых запросах сайт переставал отвечать"}
-  - {kind: rss, handle: rbc, url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss", title: РБК, topic_hint: economy, active: true}
-  - {kind: rss, handle: vedomosti, url: "https://www.vedomosti.ru/rss/news", title: Ведомости, topic_hint: economy, active: true}
-  - {kind: rss, handle: lenta, url: "https://lenta.ru/rss/news", title: Lenta.ru, active: true}
-  - {kind: rss, handle: habr_news, url: "https://habr.com/ru/rss/news/", title: Хабр — новости, topic_hint: tech_ai, active: true}
-  - {kind: rss, handle: vc, url: "https://vc.ru/rss/all", title: vc.ru, topic_hint: tech_ai, active: true}
+  # --- Российские СМИ (лента проверена; в реестрах нежелательных организаций и иноагентов не найдены) ---
+  - {kind: rss, handle: tass, url: "https://tass.ru/rss/v2.xml", title: ТАСС, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: ria, url: "https://ria.ru/export/rss2/archive/index.xml", title: РИА Новости, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: interfax, url: "https://www.interfax.ru/rss.asp", title: Интерфакс, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: kommersant, url: "https://www.kommersant.ru/RSS/news.xml", title: Коммерсантъ, topic_hint: economy, country: RU, active: false, legal_checked: 2026-09-25, note: "Лента большая (~500 записей); при частых запросах сайт переставал отвечать. Включить после проверки стабильности."}
+  - {kind: rss, handle: rbc, url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss", title: РБК, topic_hint: economy, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: vedomosti, url: "https://www.vedomosti.ru/rss/news", title: Ведомости, topic_hint: economy, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: lenta, url: "https://lenta.ru/rss/news", title: Lenta.ru, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: habr_news, url: "https://habr.com/ru/rss/news/", title: Хабр — новости, topic_hint: tech_ai, country: RU, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: vc, url: "https://vc.ru/rss/all", title: vc.ru, topic_hint: tech_ai, country: RU, active: true, legal_checked: 2026-09-25}
 
-  # --- Публичные Telegram-каналы (веб-превью t.me/s/…): добавить после проверки по реестрам ---
-  - {kind: tg, handle: NeuralProfit, title: NeuralProfit, topic_hint: tech_ai, active: true, note: "из плана; проверить статус канала и автора"}
-  - {kind: tg, handle: simply_formula, title: Simply Formula, topic_hint: finance, active: true, note: "из плана; проверить статус канала и автора"}
+  # --- Публичные Telegram-каналы (веб-превью t.me/s/…); оба зарегистрированы как блогеры в Роскомнадзоре ---
+  - {kind: tg, handle: NeuralProfit, title: "НейроProfit | Соня Pro Ai", topic_hint: tech_ai, country: RU, active: true, legal_checked: 2026-09-25, note: "Авторский канал про ИИ; в постах встречается реклама с erid (фильтр рекламы её убирает). Признаков иноагента не найдено."}
+  - {kind: tg, handle: simply_formula, title: Simply Formula, topic_hint: sport, country: RU, active: true, legal_checked: 2026-09-25, note: "Авторский блог Романа Кузнецова о Формуле-1. Признаков иноагента не найдено."}
+
+  # --- Космос: космические агентства и профильные СМИ (США, Европа, Великобритания) ---
+  - {kind: gov, handle: nasa, url: "https://www.nasa.gov/feed/", title: NASA, topic_hint: space, country: US, lang: en, active: true, legal_checked: 2026-09-25, note: "Правительственное агентство США; в нежелательных организациях не найдено."}
+  - {kind: gov, handle: nasa_science, url: "https://science.nasa.gov/feed/", title: NASA Science, topic_hint: space, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: gov, handle: esa, url: "https://www.esa.int/rssfeed/TopNews", title: Европейское космическое агентство, topic_hint: space, country: EU, lang: en, active: true, legal_checked: 2026-09-25, note: "Межправительственная организация; в нежелательных организациях не найдено."}
+  - {kind: rss, handle: ars_science, url: "https://feeds.arstechnica.com/arstechnica/science", title: Ars Technica — наука, topic_hint: science, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: guardian_space, url: "https://www.theguardian.com/science/space/rss", title: The Guardian — космос, topic_hint: space, country: GB, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: nyt_space, url: "https://rss.nytimes.com/services/xml/rss/nyt/Space.xml", title: The New York Times — космос, topic_hint: space, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+
+  # --- США и Великобритания: общая картина мира ---
+  - {kind: rss, handle: guardian_world, url: "https://www.theguardian.com/world/rss", title: The Guardian — мир, country: GB, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: guardian_uk, url: "https://www.theguardian.com/uk-news/rss", title: The Guardian — Великобритания, country: GB, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: guardian_us, url: "https://www.theguardian.com/us-news/rss", title: The Guardian — США, country: GB, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: sky_world, url: "https://feeds.skynews.com/feeds/rss/world.xml", title: Sky News — мир, country: GB, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: nyt_world, url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", title: The New York Times — мир, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: nyt_us, url: "https://rss.nytimes.com/services/xml/rss/nyt/US.xml", title: The New York Times — США, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: npr_news, url: "https://feeds.npr.org/1001/rss.xml", title: NPR, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+  - {kind: rss, handle: wapo_world, url: "https://feeds.washingtonpost.com/rss/world", title: The Washington Post — мир, country: US, lang: en, active: true, legal_checked: 2026-09-25}
+
+  # --- Не подключены ---
+  # BBC (feeds.bbci.co.uk): сайт заблокирован в России, лента недоступна с нашего сервера; по спискам нежелательных
+  #   организаций не значится (были лишь предложения депутатов), но без доступа с сервера смысла подключать нет.
+  # Space.com, SpaceNews: сайты не отдают ленты автоматическим клиентам (пустая страница / HTTP 429).
+  # Deutsche Welle, Радио Свобода, Медуза, The Insider и другие из реестров — не добавляются.

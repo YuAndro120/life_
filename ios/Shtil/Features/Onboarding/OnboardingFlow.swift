@@ -5,14 +5,15 @@ struct OnboardingFlow: View {
     @Environment(AppModel.self) private var model
     @State private var step: Step = DebugLaunch.onboardingStep.flatMap(Step.init(rawValue:)) ?? .welcome
 
-    enum Step: Int { case welcome, profile, calm, theme, building }
+    enum Step: Int { case welcome, profile, interests, calm, theme, building }
 
     var body: some View {
         ZStack {
             switch step {
             case .welcome: OnbWelcome { go(.profile) }
-            case .profile: OnbProfile(back: { go(.welcome) }, next: { go(.calm) }, skip: skip)
-            case .calm: OnbCalm(back: { go(.profile) }, next: { go(.theme) })
+            case .profile: OnbProfile(back: { go(.welcome) }, next: { go(.interests) }, skip: skip)
+            case .interests: OnbInterests(back: { go(.profile) }, next: { go(.calm) })
+            case .calm: OnbCalm(back: { go(.interests) }, next: { go(.theme) })
             case .theme: OnbTheme(back: { go(.calm) }, next: { go(.building) })
             case .building: OnbBuilding()
             }
@@ -35,6 +36,7 @@ struct OnboardingFlow: View {
 private struct OnbTop: View {
     @Environment(\.theme) private var theme
     let current: Int
+    var total = 4
     let back: () -> Void
 
     var body: some View {
@@ -45,10 +47,10 @@ private struct OnbTop: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                Text("\(RuFormat.two(current)) / 03").metaStyle()
+                Text("\(RuFormat.two(current)) / \(RuFormat.two(total))").metaStyle()
             }
             HStack(spacing: 6) {
-                ForEach(1...3, id: \.self) { i in
+                ForEach(1...total, id: \.self) { i in
                     Capsule().fill(i <= current ? (theme.id == .sage ? theme.accent : theme.ink) : theme.line).frame(height: 4)
                 }
             }
@@ -157,7 +159,57 @@ private struct OnbProfile: View {
     }
 }
 
-// MARK: - 2. что не показывать
+// MARK: - 2. что интересно
+
+private struct OnbInterests: View {
+    @Environment(\.theme) private var theme
+    @Environment(AppModel.self) private var model
+    let back: () -> Void
+    let next: () -> Void
+
+    var body: some View {
+        OnbScaffold(current: 2, back: back) {
+            ScreenTitle(title: "Что тебе интересно", size: 40, mark: "?").padding(.top, 22)
+            Text("Сюжеты по выбранным темам пойдут первыми. Всё можно поменять в фильтрах.")
+                .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted).padding(.top, 12)
+
+            SectionTitle(index: "01", title: "Откуда новости").padding(.top, 28).padding(.bottom, 14)
+            FlowLayout(spacing: 8) {
+                ForEach(NewsCountry.allCases, id: \.self) { country in
+                    ChipButton(title: country.title, isOn: model.settings.preferences.countries.contains(country.rawValue)) {
+                        var p = model.settings.preferences
+                        if p.countries.contains(country.rawValue) {
+                            guard p.countries.count > 1 else { return }
+                            p.countries.remove(country.rawValue)
+                        } else {
+                            p.countries.insert(country.rawValue)
+                        }
+                        model.settings.preferences = p
+                        model.save()
+                    }
+                }
+            }
+            Text("Пересказ иностранных изданий всегда по-русски.")
+                .font(theme.fonts.body(13)).foregroundStyle(theme.muted).padding(.top, 10)
+
+            SectionTitle(index: "02", title: "Темы").padding(.top, 32).padding(.bottom, 14)
+            FlowLayout(spacing: 8) {
+                ForEach(Topic.allCases, id: \.self) { topic in
+                    ChipButton(title: topic.title, isOn: model.settings.preferences.interests.contains(topic)) {
+                        var p = model.settings.preferences
+                        p.toggleInterest(topic)
+                        model.settings.preferences = p
+                        model.save()
+                    }
+                }
+            }
+        } footer: {
+            PrimaryButton(title: "Дальше", trailing: "→", action: next)
+        }
+    }
+}
+
+// MARK: - 3. что не показывать
 
 private struct OnbCalm: View {
     @Environment(\.theme) private var theme
@@ -168,7 +220,7 @@ private struct OnbCalm: View {
     private static let hideable: [Topic] = [.politics, .crime, .incidents, .disasters, .showbiz, .sport, .crypto]
 
     var body: some View {
-        OnbScaffold(current: 2, back: back) {
+        OnbScaffold(current: 3, back: back) {
             ScreenTitle(title: "Что тебе не показывать", size: 40, mark: "?").padding(.top, 22)
             Text("Всё это можно поменять потом в фильтрах.")
                 .font(theme.fonts.body(16)).foregroundStyle(theme.muted).padding(.top, 12)
@@ -250,7 +302,7 @@ private struct OnbTheme: View {
     let next: () -> Void
 
     var body: some View {
-        OnbScaffold(current: 3, back: back) {
+        OnbScaffold(current: 4, back: back) {
             ScreenTitle(title: "Как будет выглядеть выпуск", size: 40, mark: "?").padding(.top, 22)
             Text("Выбери тему, экран сразу покажет её. Сменить можно в любой момент.")
                 .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted).padding(.top, 12)

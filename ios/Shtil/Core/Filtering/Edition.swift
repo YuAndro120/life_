@@ -11,8 +11,10 @@ struct EditionStats: Equatable, Sendable {
     var postsTotal: Int
     /// Скрыто рекламы на сервере.
     var adsHidden: Int
-    /// Сюжетов убрано фильтрами на устройстве (стоп-темы, типы информации, режим тяжёлых).
+    /// Сюжетов убрано фильтрами на устройстве (стоп-темы, типы информации, страны, скрытые, режим тяжёлых).
     var filteredOut: Int
+    /// Сюжетов, не вошедших в выпуск из-за лимита «сюжетов в выпуске».
+    var trimmed: Int = 0
 }
 
 struct Edition: Equatable, Sendable {
@@ -21,6 +23,8 @@ struct Edition: Equatable, Sendable {
     var stories: [Story]
     /// Тяжёлые сюжеты, свёрнутые в одну сводку в конце выпуска.
     var foldedHeavy: [Story]
+    /// Сюжеты выпуска, попавшие в «Мои интересы».
+    var interestIDs: Set<String> = []
     var stats: EditionStats
 }
 

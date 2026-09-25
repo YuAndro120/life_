@@ -254,7 +254,11 @@ func userMessage(in llm.StoryInput) string {
 		if len(text) > maxRunesPerPost {
 			text = text[:maxRunesPerPost]
 		}
-		fmt.Fprintf(&b, "Пост %d. Источник: %s (%s), %s\n%s\n\n", i+1, p.SourceTitle, p.SourceKind, p.PublishedAt.UTC().Format("2006-01-02 15:04"), string(text))
+		lang := p.Lang
+		if lang == "" {
+			lang = "ru"
+		}
+		fmt.Fprintf(&b, "Пост %d. Источник: %s (%s), язык %s, %s\n%s\n\n", i+1, p.SourceTitle, p.SourceKind, lang, p.PublishedAt.UTC().Format("2006-01-02 15:04"), string(text))
 	}
 	return strings.TrimSpace(b.String())
 }

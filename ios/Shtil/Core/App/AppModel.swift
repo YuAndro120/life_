@@ -25,6 +25,8 @@ final class AppModel {
     /// Когда данные последний раз получены с сервера (или из кэша при офлайне).
     private(set) var lastSyncedAt: Date?
     private let cache: ContentCache
+    /// Последнее действие «Не интересно» для кнопки «Отменить».
+    private(set) var undo: FeedbackAction?
     /// Текущее время; обновляется раз в минуту, чтобы тема и «следующий выпуск» не устаревали.
     var now: Date
 
@@ -138,6 +140,27 @@ final class AppModel {
     }
 
     func tick(now: Date = .now) { self.now = now }
+
+    // MARK: «Не интересно»
+
+    func apply(_ action: FeedbackAction) {
+        var p = settings.preferences
+        guard action.apply(to: &p) else { return }
+        settings.preferences = p
+        save()
+        undo = action
+    }
+
+    func undoLast() {
+        guard let action = undo else { return }
+        var p = settings.preferences
+        action.revert(on: &p)
+        settings.preferences = p
+        save()
+        undo = nil
+    }
+
+    func clearUndo() { undo = nil }
 
     // MARK: онбординг
 

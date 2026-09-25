@@ -20,6 +20,10 @@ type Entry struct {
 	URL       string `yaml:"url"`
 	Title     string `yaml:"title"`
 	TopicHint string `yaml:"topic_hint"`
+	// Country — страна издания (RU, US, GB, EU): по ней пользователь выбирает, откуда читать новости.
+	Country string `yaml:"country"`
+	// Lang — язык постов (ru по умолчанию). Пересказ всегда по-русски.
+	Lang string `yaml:"lang"`
 	// Active — желание владельца включить источник. Фактически он включится только при legal_checked.
 	Active bool `yaml:"active"`
 	// LegalChecked — дата (ГГГГ-ММ-ДД), когда источник проверен по реестрам нежелательных организаций и иноагентов.
@@ -32,12 +36,14 @@ type file struct {
 }
 
 var (
-	kinds    = map[string]bool{"rss": true, "tg": true, "gov": true, "site": true}
-	handleRe = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
-	topics   = map[string]bool{
+	kinds     = map[string]bool{"rss": true, "tg": true, "gov": true, "site": true}
+	handleRe  = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
+	countryRe = regexp.MustCompile(`^[A-Z]{2}$`)
+	langRe    = regexp.MustCompile(`^[a-z]{2}$`)
+	topics    = map[string]bool{
 		"economy": true, "finance": true, "law": true, "tech_ai": true, "city": true, "health": true,
 		"education": true, "transport": true, "housing": true, "science": true, "culture": true,
-		"sport": true, "showbiz": true, "crypto": true, "politics": true, "crime": true,
+		"sport": true, "showbiz": true, "space": true, "crypto": true, "politics": true, "crime": true,
 		"incidents": true, "disasters": true,
 	}
 )
@@ -61,6 +67,9 @@ func Parse(r io.Reader) ([]Entry, error) {
 	seen := map[string]bool{}
 	for i := range doc.Sources {
 		e := &doc.Sources[i]
+		if e.Lang == "" {
+			e.Lang = "ru"
+		}
 		if e.Kind == "tg" && e.URL == "" && e.Handle != "" {
 			e.URL = "https://t.me/s/" + e.Handle
 		}
@@ -95,6 +104,12 @@ func (e Entry) Validate() error {
 	}
 	if e.TopicHint != "" && !topics[e.TopicHint] {
 		return fmt.Errorf("неизвестный topic_hint %q", e.TopicHint)
+	}
+	if e.Country != "" && !countryRe.MatchString(e.Country) {
+		return fmt.Errorf("country %q: ожидается двухбуквенный код страны", e.Country)
+	}
+	if !langRe.MatchString(e.Lang) {
+		return fmt.Errorf("lang %q: ожидается двухбуквенный код языка", e.Lang)
 	}
 	if e.LegalChecked != "" {
 		if _, err := time.Parse("2006-01-02", e.LegalChecked); err != nil {

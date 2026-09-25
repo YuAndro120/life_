@@ -177,4 +177,108 @@ import Testing
         #expect(e.stories.first?.id == "st_01")
         #expect(e.stats.aboutYou == 4)
     }
+
+    // MARK: страны, интересы, «Не интересно», лимит
+
+    private func full(_ base: FilterPreferences = .default, _ change: (inout FilterPreferences) -> Void) -> FilterPreferences {
+        var p = FilterPreferences(calmMode: true, infoTypes: Set(InfoType.allCases), heavyMode: .show, maxHeavy: 3, stopTopics: [], hideAds: true)
+        change(&p)
+        return p
+    }
+
+    @Test func onlyRussiaByDefaultAndMissingCountryMeansRussia() {
+        let e = build(
+            [TestData.story("ru"), TestData.story("ru2", country: "RU"), TestData.story("us", country: "US"), TestData.story("gb", country: "GB")],
+            prefs: full { _ in }
+        )
+        #expect(Set(e.stories.map(\.id)) == ["ru", "ru2"])
+        #expect(e.stats.filteredOut == 2)
+    }
+
+    @Test func selectedCountriesAreShown() {
+        let stories = [TestData.story("ru"), TestData.story("us", country: "US"), TestData.story("gb", country: "GB"), TestData.story("eu", country: "EU")]
+        let e = build(stories, prefs: full { $0.countries = ["RU", "US", "GB"] })
+        #expect(Set(e.stories.map(\.id)) == ["ru", "us", "gb"])
+    }
+
+    @Test func interestsGoFirstAndAreMarked() {
+        let stories = [
+            TestData.story("official-econ", topic: .economy, type: .official, sources: 9),
+            TestData.story("space-fact", topic: .space, type: .fact, sources: 2),
+            TestData.story("sport", topic: .sport, type: .fact, sources: 5),
+        ]
+        let e = build(stories, prefs: full { $0.interests = [.space] })
+        #expect(e.stories.first?.id == "space-fact")
+        #expect(e.interestIDs == ["space-fact"])
+        #expect(e.stories.count == 3)
+    }
+
+    @Test func onlyInterestsFiltersTheRest() {
+        let stories = [TestData.story("a", topic: .space), TestData.story("b", topic: .sport), TestData.story("c", topic: .science)]
+        let e = build(stories, prefs: full { $0.interests = [.space, .science]; $0.onlyInterests = true })
+        #expect(Set(e.stories.map(\.id)) == ["a", "c"])
+    }
+
+    @Test func onlyInterestsWithoutInterestsShowsEverything() {
+        let e = build([TestData.story("a"), TestData.story("b", topic: .sport)], prefs: full { $0.onlyInterests = true })
+        #expect(e.stories.count == 2)
+    }
+
+    @Test func hiddenStoryIsRemoved() {
+        let e = build([TestData.story("keep"), TestData.story("gone")], prefs: full { $0.hiddenStories = ["gone"] })
+        #expect(e.stories.map(\.id) == ["keep"])
+        #expect(e.stats.filteredOut == 1)
+    }
+
+    @Test func mutedSourceHidesOnlyStoriesWhereAllSourcesAreMuted() {
+        let stories = [
+            TestData.story("only-bad", sourceTitles: ["Шумный"]),
+            TestData.story("both", sourceTitles: ["Шумный", "Нормальный"]),
+            TestData.story("good", sourceTitles: ["Нормальный"]),
+            TestData.story("nosources"),
+        ]
+        let e = build(stories, prefs: full { $0.mutedSources = ["Шумный"] })
+        #expect(Set(e.stories.map(\.id)) == ["both", "good", "nosources"])
+    }
+
+    @Test func storyLimitTrimsTheLowestRanked() {
+        let stories = (1...6).map { TestData.story("s\($0)", sources: 10 - $0) }
+        let e = build(stories, prefs: full { $0.storyLimit = 4 })
+        #expect(e.stories.map(\.id) == ["s1", "s2", "s3", "s4"])
+        #expect(e.stats.trimmed == 2)
+        #expect(e.stats.stories == 4)
+    }
+
+    @Test func interestingStoryIsNotTrimmedBeforeUninteresting() {
+        var stories = (1...5).map { TestData.story("big\($0)", topic: .economy, sources: 20 - $0) }
+        stories.append(TestData.story("space", topic: .space, sources: 1))
+        let e = build(stories, prefs: full { $0.interests = [.space]; $0.storyLimit = 3 })
+        #expect(e.stories.map(\.id).contains("space"))
+        #expect(e.stories.first?.id == "space")
+    }
+
+    @Test func interestAndStopTopicAreMutuallyExclusive() {
+        var p = FilterPreferences.default
+        p.toggleStopTopic(.space)
+        #expect(p.stopTopics.contains(.space))
+        p.toggleInterest(.space)
+        #expect(p.interests.contains(.space) && !p.stopTopics.contains(.space))
+        p.toggleStopTopic(.space)
+        #expect(p.stopTopics.contains(.space) && !p.interests.contains(.space))
+    }
+
+    @Test func fixtureWithUSAndSpaceForInterestedReader() throws {
+        let feed = try Fixtures.feed()
+        var p = FilterPreferences.default
+        p.countries = ["RU", "US"]
+        p.interests = [.space]
+        p.stopTopics = [] // по умолчанию политика скрыта, а st_11 — про политику
+        let e = FilterEngine.edition(
+            number: 1, feed: feed, laws: [], profile: .empty, preferences: p,
+            window: EditionWindow(start: nil, end: TestData.date("2026-09-25T05:00:00Z")), today: TestData.today
+        )
+        #expect(e.stories.first?.id == "st_10", "космический сюжет NASA идёт первым")
+        #expect(e.interestIDs.contains("st_10"))
+        #expect(e.stories.contains { $0.id == "st_11" })
+    }
 }

@@ -40,6 +40,7 @@ type memStore struct {
 	posts   []*memPost
 	stories map[int64]*memStory
 	next    int64
+	tokens  int64
 }
 
 func newMem() *memStore { return &memStore{stories: map[int64]*memStory{}, next: 100} }
@@ -149,6 +150,13 @@ func (m *memStore) SaveDigest(_ context.Context, id int64, d llm.Digest, _ time.
 func (m *memStore) RecordDigestFailure(_ context.Context, id int64, msg string) error {
 	m.stories[id].attempts++
 	m.stories[id].digestErr = msg
+	return nil
+}
+
+func (m *memStore) TokensUsed(_ context.Context, _ time.Time) (int64, error) { return m.tokens, nil }
+
+func (m *memStore) AddTokens(_ context.Context, _ time.Time, prompt, completion int) error {
+	m.tokens += int64(prompt + completion)
 	return nil
 }
 
@@ -392,5 +400,36 @@ func TestEmptyStoryIsSkippedAndDoesNotStopTheRun(t *testing.T) {
 	}
 	if l.calls != 3 {
 		t.Errorf("модель не должна вызываться для пустого сюжета: %d вызовов", l.calls)
+	}
+}
+
+func TestDailyTokenBudgetStopsDigesting(t *testing.T) {
+	m := newMem()
+	fill(m)
+	l := &fakeLLM{fn: okDigest, tokens: 400} // на сюжет уходит 400 + 100 = 500 токенов
+	w := worker(m, l, t0.Add(2*time.Hour))
+	w.DailyTokenBudget = 1000
+	sum, _ := w.RunOnce(context.Background())
+	if l.calls != 2 || sum.Digested != 2 {
+		t.Errorf("при лимите 1000 токенов должно хватить на 2 сюжета: вызовов %d, %+v", l.calls, sum)
+	}
+	if sum.Stopped == "" || m.tokens != 1000 {
+		t.Errorf("остановка по лимиту и учёт токенов: %q, учтено %d", sum.Stopped, m.tokens)
+	}
+	// Следующий проход в тот же день ничего не тратит.
+	sum2, _ := w.RunOnce(context.Background())
+	if l.calls != 2 || sum2.Digested != 0 {
+		t.Errorf("лимит исчерпан, вызовов быть не должно: %d", l.calls)
+	}
+}
+
+func TestTokensCountedEvenWhenAnswerIsInvalid(t *testing.T) {
+	m := newMem()
+	m.add(1, 1, 0, "Минфин", true, "Минфин предложил изменить порядок уплаты авансовых платежей для ИП на УСН")
+	l := &fakeLLM{tokens: 400, fn: func(llm.StoryInput, int) (llm.Digest, error) { return llm.Digest{}, llm.ErrInvalid }}
+	w := worker(m, l, t0.Add(time.Hour))
+	w.RunOnce(context.Background())
+	if m.tokens != 500 {
+		t.Errorf("неудачный ответ тоже стоит токенов и должен учитываться: %d", m.tokens)
 	}
 }

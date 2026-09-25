@@ -19,6 +19,15 @@ final class FilterSettings {
     var eveningMinutes: Int = 19 * 60
     var theme: String = ThemeChoice.paper.rawValue
     var autoDusk: Bool = true
+    var countries: [String] = ["RU"]
+    var interests: [String] = []
+    var onlyInterests: Bool = false
+    var mutedSources: [String] = []
+    /// Идентификаторы скрытых сюжетов в порядке скрытия (хранятся последние 300).
+    var hiddenStories: [String] = []
+    var storyLimit: Int = 15
+
+    static let hiddenLimit = 300
 
     init() {}
 
@@ -30,7 +39,13 @@ final class FilterSettings {
                 heavyMode: HeavyMode(rawValue: heavyMode) ?? .fold,
                 maxHeavy: maxHeavy,
                 stopTopics: Set(stopTopics.compactMap(Topic.init(rawValue:))),
-                hideAds: hideAds
+                hideAds: hideAds,
+                countries: Set(countries),
+                interests: Set(interests.compactMap(Topic.init(rawValue:))),
+                onlyInterests: onlyInterests,
+                mutedSources: Set(mutedSources),
+                hiddenStories: Set(hiddenStories),
+                storyLimit: storyLimit
             )
         }
         set {
@@ -40,6 +55,15 @@ final class FilterSettings {
             maxHeavy = newValue.maxHeavy
             stopTopics = newValue.stopTopics.map(\.rawValue).sorted()
             hideAds = newValue.hideAds
+            countries = newValue.countries.sorted()
+            interests = newValue.interests.map(\.rawValue).sorted()
+            onlyInterests = newValue.onlyInterests
+            mutedSources = newValue.mutedSources.sorted()
+            // Порядок скрытия сохраняем: новые id добавляются в конец, лишние старые отбрасываются.
+            let kept = hiddenStories.filter { newValue.hiddenStories.contains($0) }
+            let added = newValue.hiddenStories.subtracting(kept).sorted()
+            hiddenStories = Array((kept + added).suffix(Self.hiddenLimit))
+            storyLimit = newValue.storyLimit
         }
     }
 

@@ -19,11 +19,10 @@ enum FilterEngine {
             story.updatedAt <= window.end && (window.start.map { story.updatedAt > $0 } ?? true)
         }
         let allowed = inWindow.filter { story in
-            !preferences.stopTopics.contains(story.topic)
-                && preferences.infoTypes.contains(story.infoType)
+            isAllowed(story, preferences)
         }
 
-        let heavy = allowed.filter { $0.heaviness == .heavy }.sorted(by: storyOrder)
+        let heavy = allowed.filter { $0.heaviness == .heavy }.sorted { storyOrder($0, $1) }
         let regular = allowed.filter { $0.heaviness != .heavy }
 
         var shownHeavy: [Story] = []
@@ -39,8 +38,12 @@ enum FilterEngine {
             folded = Array(heavy.dropFirst(limit))
         }
 
-        let stories = (regular + shownHeavy).sorted(by: storyOrder)
-        let kept = stories.count + folded.count
+        let ranked = (regular + shownHeavy).sorted { storyOrder($0, $1, interests: preferences.interests) }
+        let limit = max(1, preferences.storyLimit)
+        let stories = Array(ranked.prefix(limit))
+        let trimmed = ranked.count - stories.count
+        let kept = ranked.count + folded.count
+        let interestIDs = Set(stories.filter { preferences.interests.contains($0.topic) }.map(\.id))
 
         let stats = EditionStats(
             aboutYou: relevantLaws.count,
@@ -48,13 +51,27 @@ enum FilterEngine {
             readingMinutes: readingMinutes(laws: relevantLaws, stories: stories),
             postsTotal: feed.stats.postsTotal,
             adsHidden: feed.stats.adsHidden,
-            filteredOut: inWindow.count - kept
+            filteredOut: inWindow.count - kept,
+            trimmed: trimmed
         )
-        return Edition(number: number, laws: relevantLaws, stories: stories, foldedHeavy: folded, stats: stats)
+        return Edition(number: number, laws: relevantLaws, stories: stories, foldedHeavy: folded, interestIDs: interestIDs, stats: stats)
     }
 
-    /// Официальное выше фактов, больше источников выше, затем свежее; `id` делает порядок детерминированным.
-    static func storyOrder(_ a: Story, _ b: Story) -> Bool {
+    /// Можно ли показывать сюжет при таких настройках: тема, тип, страна, скрытые пользователем сюжеты и источники, «только интересы».
+    static func isAllowed(_ story: Story, _ p: FilterPreferences) -> Bool {
+        guard !p.stopTopics.contains(story.topic), p.infoTypes.contains(story.infoType) else { return false }
+        guard p.countries.contains(story.countryCode) else { return false }
+        guard !p.hiddenStories.contains(story.id) else { return false }
+        if !story.sources.isEmpty, story.sources.allSatisfy({ p.mutedSources.contains($0.title) }) { return false }
+        if p.onlyInterests, !p.interests.isEmpty, !p.interests.contains(story.topic) { return false }
+        return true
+    }
+
+    /// Интересные темы идут первыми; дальше официальное выше фактов, больше источников выше, затем свежее;
+    /// `id` делает порядок детерминированным.
+    static func storyOrder(_ a: Story, _ b: Story, interests: Set<Topic> = []) -> Bool {
+        let (ia, ib) = (interests.contains(a.topic), interests.contains(b.topic))
+        if ia != ib { return ia }
         let (ra, rb) = (rank(a.infoType), rank(b.infoType))
         if ra != rb { return ra < rb }
         if a.sourceCount != b.sourceCount { return a.sourceCount > b.sourceCount }

@@ -112,6 +112,8 @@ func syncCatalog(ctx context.Context, pool *pgxpool.Pool, path string) error {
 		err := q.UpsertSource(ctx, sqlcgen.UpsertSourceParams{
 			Kind: e.Kind, Handle: e.Handle, Url: e.URL, Title: e.Title,
 			TopicHint:      pgtype.Text{String: e.TopicHint, Valid: e.TopicHint != ""},
+			Country:        pgtype.Text{String: e.Country, Valid: e.Country != ""},
+			Lang:           e.Lang,
 			LegalStatus:    "ok",
 			LegalCheckedAt: checked,
 			Active:         active,
