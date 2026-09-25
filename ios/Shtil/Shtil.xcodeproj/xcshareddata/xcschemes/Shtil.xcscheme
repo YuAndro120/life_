@@ -81,7 +81,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-shtilSource fixtures"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

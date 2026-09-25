@@ -64,9 +64,10 @@ schemes:
         Shtil: all
     run:
       commandLineArguments:
-        # Встроенные данные, без сервера. Чтобы ходить на настоящий сервер: снять галочку здесь
-        # (Product → Scheme → Edit Scheme → Run → Arguments) и включить -shtilAPI с адресом Mac.
-        "-shtilSource fixtures": true
+        # По умолчанию приложение ходит на https://shtil.tech. Аргументы включаются в
+        # Product → Scheme → Edit Scheme → Run → Arguments: fixtures — встроенные данные без сети,
+        # -shtilAPI — свой адрес (например, локальный сервер на Mac).
+        "-shtilSource fixtures": false
         "-shtilAPI http://192.168.1.130:8080": false
     test:
       targets:
