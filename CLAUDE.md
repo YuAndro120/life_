@@ -34,3 +34,6 @@ go test ./...
 # iOS
 xcodebuild -project ios/Life/Life.xcodeproj -scheme Life -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build test
 ```
+
+## Решения вне плана
+Если приходится выбрать то, о чём `plan.md` молчит, запиши это в `revisit.md` (что решено, где в коде, что проверить на iPhone). Не молчи о таких решениях в коммитах и отчётах.
