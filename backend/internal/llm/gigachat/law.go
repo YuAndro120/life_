@@ -95,7 +95,7 @@ func (c *Client) ExtractLaw(ctx context.Context, in llm.LawInput) (llm.LawDraft,
 			}
 		}
 		lastErr = err
-		c.cfg.Log.Warn("модель вернула некорректный разбор закона", "attempt", attempt, "err", err)
+		c.cfg.Log.Warn("модель вернула некорректный разбор закона", "attempt", attempt, "err", err, "ответ", rawAnswer(resp))
 	}
 	return llm.LawDraft{}, total, fmt.Errorf("%w: %v", llm.ErrInvalid, lastErr)
 }
@@ -145,4 +145,20 @@ func parseLaw(resp chatResponse) (llm.LawDraft, error) {
 		}
 	}
 	return d, nil
+}
+
+// rawAnswer — начало ответа модели для журнала (только для отладки, текст закона в него не входит).
+func rawAnswer(resp chatResponse) string {
+	if len(resp.Choices) == 0 {
+		return ""
+	}
+	m := resp.Choices[0].Message
+	s := m.Content
+	if m.FunctionCall != nil {
+		s = string(m.FunctionCall.Arguments)
+	}
+	if r := []rune(s); len(r) > 400 {
+		s = string(r[:400]) + "…"
+	}
+	return s
 }
