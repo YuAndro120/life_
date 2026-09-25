@@ -10,6 +10,7 @@ RUN go mod download
 COPY . .
 RUN go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api \
  && go build -trimpath -ldflags="-s -w" -o /out/collector ./cmd/collector \
+ && go build -trimpath -ldflags="-s -w" -o /out/worker ./cmd/worker \
  && go build -trimpath -ldflags="-s -w" -o /out/seed ./cmd/seed
 # goose для миграций (та же версия, что и на разработке)
 RUN go install github.com/pressly/goose/v3/cmd/goose@v3.28.0 && cp /go/bin/${TARGETOS}_${TARGETARCH}/goose /out/goose 2>/dev/null || cp /go/bin/goose /out/goose
@@ -26,6 +27,11 @@ COPY --from=build /out/collector /app/collector
 COPY seeds/sources.yaml /app/seeds/sources.yaml
 USER nonroot:nonroot
 ENTRYPOINT ["/app/collector"]
+
+FROM gcr.io/distroless/static-debian12:nonroot AS worker
+COPY --from=build /out/worker /app/worker
+USER nonroot:nonroot
+ENTRYPOINT ["/app/worker"]
 
 FROM gcr.io/distroless/static-debian12:nonroot AS migrate
 COPY --from=build /out/goose /app/goose

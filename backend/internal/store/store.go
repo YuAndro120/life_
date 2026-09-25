@@ -55,12 +55,12 @@ func (p *Postgres) Feed(ctx context.Context, since time.Time) (api.Feed, error) 
 		}
 		feed.Stories = append(feed.Stories, api.Story{
 			ID:          "st_" + strconv.FormatInt(r.ID, 10),
-			Topic:       r.Topic,
-			InfoType:    r.InfoType,
-			Heaviness:   r.Heaviness,
-			Title:       r.TitleNeutral,
+			Topic:       r.Topic.String,
+			InfoType:    r.InfoType.String,
+			Heaviness:   r.Heaviness.String,
+			Title:       r.TitleNeutral.String,
 			Meaning:     textPtr(r.Meaning),
-			Summary:     r.Summary,
+			Summary:     r.Summary.String,
 			PostCount:   int(r.PostCount),
 			SourceCount: int(r.SourceCount),
 			Sources:     sources,
