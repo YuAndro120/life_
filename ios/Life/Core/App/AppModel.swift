@@ -16,6 +16,11 @@ final class AppModel {
     private(set) var laws: [Law] = []
     private(set) var reminderLawIds: Set<String> = []
     private(set) var loadError: String?
+    /// Данные взяты из кэша, потому что сервер недоступен.
+    private(set) var isOffline = false
+    /// Когда данные последний раз получены с сервера (или из кэша при офлайне).
+    private(set) var lastSyncedAt: Date?
+    private let cache: ContentCache
     /// Текущее время; обновляется раз в минуту, чтобы тема и «следующий выпуск» не устаревали.
     var now: Date
 
@@ -33,6 +38,13 @@ final class AppModel {
         self.settings = Self.fetchOrCreate(FilterSettings.self, in: context) { FilterSettings() }
         self.counter = Self.fetchOrCreate(EditionCounter.self, in: context) { EditionCounter() }
         self.reminderLawIds = Set(((try? context.fetch(FetchDescriptor<Reminder>())) ?? []).map(\.lawId))
+        self.cache = ContentCache(context: context)
+        // Показываем сохранённый выпуск сразу, до ответа сети.
+        if let snapshot = cache.load() {
+            feed = snapshot.feed
+            laws = snapshot.laws
+            lastSyncedAt = snapshot.fetchedAt
+        }
     }
 
     private static func fetchOrCreate<T: PersistentModel>(
@@ -98,8 +110,15 @@ final class AppModel {
             feed = newFeed
             laws = newLaws
             loadError = nil
+            isOffline = false
+            lastSyncedAt = Date.now
+            cache.save(feed: newFeed, laws: newLaws, fetchedAt: lastSyncedAt ?? .now)
         } catch {
-            loadError = "Не удалось загрузить выпуск"
+            if feed == nil {
+                loadError = "Не удалось загрузить выпуск"
+            } else {
+                isOffline = true
+            }
         }
     }
 

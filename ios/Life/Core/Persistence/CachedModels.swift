@@ -49,3 +49,20 @@ final class EditionCounter {
         self.lastEditionAt = lastEditionAt
     }
 }
+
+/// Метаданные последнего успешного ответа ленты. Одна запись.
+@Model
+final class CachedMeta {
+    var feedGeneratedAt: Date
+    var postsTotal: Int
+    var adsHidden: Int
+    /// Когда приложение получило эти данные с сервера.
+    var fetchedAt: Date
+
+    init(feedGeneratedAt: Date, postsTotal: Int, adsHidden: Int, fetchedAt: Date) {
+        self.feedGeneratedAt = feedGeneratedAt
+        self.postsTotal = postsTotal
+        self.adsHidden = adsHidden
+        self.fetchedAt = fetchedAt
+    }
+}

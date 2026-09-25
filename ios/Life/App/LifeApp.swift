@@ -12,6 +12,7 @@ struct LifeApp: App {
             self.container = container
             let model = AppModel(
                 context: container.mainContext,
+                source: Self.makeSource(),
                 notifier: DebugLaunch.inMemory ? NoopNotificationScheduler() : SystemNotificationScheduler(),
                 now: DebugLaunch.fixedNow ?? .now
             )
@@ -20,6 +21,12 @@ struct LifeApp: App {
         } catch {
             fatalError("Не удалось открыть хранилище: \(error)")
         }
+    }
+
+    private static func makeSource() -> any ContentSource {
+        if DebugLaunch.useFixtures { return FixtureContentSource() }
+        guard let url = AppConfig.apiBaseURL else { return FixtureContentSource() }
+        return APIClient(baseURL: url)
     }
 
     var body: some Scene {

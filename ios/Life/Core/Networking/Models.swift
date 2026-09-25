@@ -95,6 +95,13 @@ struct Lossy<T: Decodable & Sendable>: Decodable, Sendable {
 }
 
 enum APICoding {
+    static func encoder() -> JSONEncoder {
+        let e = JSONEncoder()
+        e.keyEncodingStrategy = .convertToSnakeCase
+        e.dateEncodingStrategy = .iso8601
+        return e
+    }
+
     static func decoder() -> JSONDecoder {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
