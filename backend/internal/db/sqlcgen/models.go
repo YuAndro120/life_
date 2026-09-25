@@ -61,20 +61,26 @@ type Source struct {
 }
 
 type Story struct {
-	ID           int64
-	FirstSeenAt  pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-	Topic        string
-	InfoType     string
-	Heaviness    string
-	TitleNeutral string
-	Summary      string
-	Meaning      pgtype.Text
-	PostCount    int32
-	SourceCount  int32
-	Centroid     string
-	RegionCode   pgtype.Text
-	Status       string
+	ID                int64
+	FirstSeenAt       pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	Topic             pgtype.Text
+	InfoType          pgtype.Text
+	Heaviness         pgtype.Text
+	TitleNeutral      pgtype.Text
+	Summary           pgtype.Text
+	Meaning           pgtype.Text
+	PostCount         int32
+	SourceCount       int32
+	Centroid          string
+	RegionCode        pgtype.Text
+	Status            string
+	LastPostAt        pgtype.Timestamptz
+	DigestPostCount   int32
+	DigestAttempts    int32
+	DigestError       pgtype.Text
+	DigestAt          pgtype.Timestamptz
+	HasOfficialSource bool
 }
 
 type StoryPost struct {

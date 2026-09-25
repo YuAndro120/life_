@@ -3,7 +3,7 @@ export DATABASE_URL ?= postgres://shtil:shtil_dev@127.0.0.1:5432/shtil?sslmode=d
 export TEST_DATABASE_URL ?= $(DATABASE_URL)
 MIGRATIONS = internal/db/migrations
 
-.PHONY: migrate migrate-down seed run generate test test-integration vet sync-sources collect collect-loop
+.PHONY: migrate migrate-down seed run generate test test-integration vet sync-sources collect collect-loop worker debug-clusters
 
 migrate:
 	goose -dir $(MIGRATIONS) postgres "$(DATABASE_URL)" up
@@ -25,6 +25,14 @@ sync-sources:
 collect:
 	go run ./cmd/collector once
 
+# Склейка и пересказ (GIGACHAT_AUTH_KEY из окружения; без него только склейка)
+worker:
+	go run ./cmd/worker once
+
+# Как склеились бы посты за 36 часов (только чтение) — для подбора порога
+debug-clusters:
+	go run ./cmd/worker debug-clusters
+
 # Бесконечный цикл сборщика (интервал по умолчанию 10 минут)
 collect-loop:
 	go run ./cmd/collector run
@@ -39,4 +47,4 @@ test:
 	go test ./...
 
 test-integration: migrate seed
-	go test -count=1 ./internal/store/ ./internal/collector/
+	go test -count=1 ./internal/store/ ./internal/collector/ ./internal/pipeline/

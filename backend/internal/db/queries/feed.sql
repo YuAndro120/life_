@@ -23,7 +23,9 @@ SELECT
         JOIN sources src ON src.id = fp.source_id
     ), '[]'::jsonb)::jsonb AS sources
 FROM stories s
-WHERE s.status = 'published' AND s.updated_at > @since::timestamptz
+WHERE s.status = 'published' AND s.title_neutral IS NOT NULL AND s.summary IS NOT NULL
+  AND s.topic IS NOT NULL AND s.info_type IS NOT NULL AND s.heaviness IS NOT NULL
+  AND s.updated_at > @since::timestamptz
 ORDER BY s.updated_at DESC, s.id DESC;
 
 -- name: FeedStats :one

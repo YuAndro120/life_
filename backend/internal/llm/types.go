@@ -1,0 +1,128 @@
+// Package llm описывает обращение к языковой модели: вход (посты сюжета), строгий выход и его проверку.
+package llm
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+	"unicode"
+	"unicode/utf8"
+)
+
+type Post struct {
+	SourceTitle string
+	SourceKind  string
+	URL         string
+	PublishedAt time.Time
+	Text        string
+}
+
+type StoryInput struct {
+	Posts []Post
+}
+
+// Digest — результат обработки сюжета: классификация и нейтральный пересказ.
+type Digest struct {
+	Topic      string
+	InfoType   string
+	Heaviness  string
+	RegionCode string // пусто, если событие не региональное
+	Title      string
+	Summary    string
+	Meaning    string // пусто, если вывод не следует из фактов
+	// Newsworthy — новость для широкой аудитории. false у технических страниц, таблиц и регламентных объявлений.
+	Newsworthy bool
+}
+
+type Usage struct {
+	PromptTokens     int
+	CompletionTokens int
+}
+
+// Client — обработчик сюжетов. Реализации: GigaChat, подделка для тестов.
+type Client interface {
+	Digest(ctx context.Context, in StoryInput) (Digest, Usage, error)
+}
+
+// ErrInvalid — модель не дала корректный ответ после всех попыток. Ответ не «чинится» догадками.
+var ErrInvalid = errors.New("модель вернула некорректный ответ")
+
+var (
+	Topics = []string{
+		"economy", "finance", "law", "tech_ai", "city", "health", "education", "transport", "housing",
+		"science", "culture", "sport", "showbiz", "crypto", "politics", "crime", "incidents", "disasters",
+	}
+	InfoTypes  = []string{"fact", "official", "opinion", "forecast", "rumor"}
+	Heavinesss = []string{"neutral", "tense", "heavy"}
+)
+
+var (
+	regionRe    = regexp.MustCompile(`^\d{2,3}$`)
+	speculation = regexp.MustCompile(`(?i)(^|[^\p{L}])(может|могут|мог[а-я]*|возможно|вероятно|скорее всего|предположительно|видимо|наверное)([^\p{L}]|$)`)
+	clickbait   = regexp.MustCompile(`(?i)(^|[^\p{L}])(шок|шокирующ|срочно|сенсаци|ужас|невероятн|вы не поверите|молния|скандал|взрывн|немедленно)`)
+	titleShort  = 25
+)
+
+// Validate проверяет ответ модели по правилам проекта. Возвращает ошибку с причиной, чтобы её можно было залогировать.
+func (d Digest) Validate() error {
+	if !contains(Topics, d.Topic) {
+		return fmt.Errorf("topic %q не из списка", d.Topic)
+	}
+	if !contains(InfoTypes, d.InfoType) {
+		return fmt.Errorf("info_type %q не из списка", d.InfoType)
+	}
+	if !contains(Heavinesss, d.Heaviness) {
+		return fmt.Errorf("heaviness %q не из списка", d.Heaviness)
+	}
+	if d.RegionCode != "" && !regionRe.MatchString(d.RegionCode) {
+		return fmt.Errorf("region_code %q: ожидается 2–3 цифры или пусто", d.RegionCode)
+	}
+	if n := utf8.RuneCountInString(d.Title); n < titleShort || n > 160 {
+		return fmt.Errorf("длина заголовка %d вне диапазона %d–160", n, titleShort)
+	}
+	if strings.ContainsAny(d.Title, "!") || strings.HasSuffix(strings.TrimSpace(d.Title), ".") {
+		return errors.New("заголовок с восклицательным знаком или точкой в конце")
+	}
+	if clickbait.MatchString(d.Title) {
+		return errors.New("в заголовке кликбейт")
+	}
+	if shoutingWords(d.Title) >= 2 {
+		return errors.New("в заголовке слова ЗАГЛАВНЫМИ буквами")
+	}
+	if n := utf8.RuneCountInString(d.Summary); n < 40 || n > 700 {
+		return fmt.Errorf("длина пересказа %d вне диапазона 40–700", n)
+	}
+	if strings.EqualFold(strings.TrimSpace(d.Summary), strings.TrimSpace(d.Title)) {
+		return errors.New("пересказ совпадает с заголовком")
+	}
+	if speculation.MatchString(d.Meaning) {
+		return errors.New("«значит» содержит предположения (может/возможно/вероятно)")
+	}
+	if n := utf8.RuneCountInString(d.Meaning); n > 320 {
+		return fmt.Errorf("длина «значит» %d больше 320", n)
+	}
+	return nil
+}
+
+// shoutingWords считает слова длиннее трёх букв, написанные целиком заглавными (аббревиатуры до 3 букв — норма: ЦБ, МВД).
+func shoutingWords(s string) int {
+	n := 0
+	for _, w := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) }) {
+		if utf8.RuneCountInString(w) > 4 && w == strings.ToUpper(w) {
+			n++
+		}
+	}
+	return n
+}
+
+func contains(list []string, v string) bool {
+	for _, x := range list {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}

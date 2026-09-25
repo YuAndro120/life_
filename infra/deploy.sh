@@ -12,13 +12,13 @@ REMOTE=/home/shtilapp/shtil
 
 echo "== версия $VERSION, сервер $HOST"
 cd "$ROOT/backend"
-for target in api collector migrate seed; do
+for target in api collector worker migrate seed; do
   echo "-- сборка shtil/$target"
   docker buildx build --platform linux/amd64 --target "$target" -t "shtil/$target:$VERSION" --load . >/dev/null
 done
 
 echo "== загрузка образов на сервер"
-docker save "shtil/api:$VERSION" "shtil/collector:$VERSION" "shtil/migrate:$VERSION" "shtil/seed:$VERSION" | gzip | ssh "$HOST" 'gunzip | docker load' | sed 's/^/   /'
+docker save "shtil/api:$VERSION" "shtil/collector:$VERSION" "shtil/worker:$VERSION" "shtil/migrate:$VERSION" "shtil/seed:$VERSION" | gzip | ssh "$HOST" 'gunzip | docker load' | sed 's/^/   /'
 if ! ssh "$HOST" 'docker image inspect pgvector/pgvector:pg16 >/dev/null 2>&1'; then
   echo "-- образ PostgreSQL (один раз)"
   docker pull -q --platform linux/amd64 pgvector/pgvector:pg16 >/dev/null

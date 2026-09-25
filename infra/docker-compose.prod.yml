@@ -81,6 +81,20 @@ services:
     mem_limit: 96m
     tmpfs: [/tmp]
 
+  # Склейка постов в сюжеты, пересказ через GigaChat, публикация. Без GIGACHAT_AUTH_KEY только склеивает.
+  worker:
+    <<: *hardened
+    image: shtil/worker:${SHTIL_VERSION:-dev}
+    command: ["run"]
+    environment:
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+      GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
+      GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat-2}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    mem_limit: 96m
+    tmpfs: [/tmp]
+
   # Разовые команды: docker compose run --rm sync-sources
   sync-sources:
     <<: *hardened

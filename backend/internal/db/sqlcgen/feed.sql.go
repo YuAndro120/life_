@@ -55,17 +55,19 @@ SELECT
         JOIN sources src ON src.id = fp.source_id
     ), '[]'::jsonb)::jsonb AS sources
 FROM stories s
-WHERE s.status = 'published' AND s.updated_at > $1::timestamptz
+WHERE s.status = 'published' AND s.title_neutral IS NOT NULL AND s.summary IS NOT NULL
+  AND s.topic IS NOT NULL AND s.info_type IS NOT NULL AND s.heaviness IS NOT NULL
+  AND s.updated_at > $1::timestamptz
 ORDER BY s.updated_at DESC, s.id DESC
 `
 
 type ListPublishedStoriesRow struct {
 	ID           int64
-	Topic        string
-	InfoType     string
-	Heaviness    string
-	TitleNeutral string
-	Summary      string
+	Topic        pgtype.Text
+	InfoType     pgtype.Text
+	Heaviness    pgtype.Text
+	TitleNeutral pgtype.Text
+	Summary      pgtype.Text
 	Meaning      pgtype.Text
 	PostCount    int32
 	SourceCount  int32
