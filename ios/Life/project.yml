@@ -23,6 +23,9 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Life
+        LifeAPIBaseURL: $(API_BASE_URL)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -38,6 +41,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ru.andronov.life
         TARGETED_DEVICE_FAMILY: "1"
+        API_BASE_URL: "http://127.0.0.1:8080"
+      configs:
+        Release:
+          API_BASE_URL: "https://api.life.invalid"
   LifeTests:
     type: bundle.unit-test
     platform: iOS

@@ -1,0 +1,418 @@
+{
+  "sources": [
+    {
+      "kind": "rss",
+      "handle": "cbr",
+      "url": "https://www.cbr.ru/",
+      "title": "Банк России",
+      "topic_hint": "economy"
+    },
+    {
+      "kind": "rss",
+      "handle": "rbc",
+      "url": "https://example.org/rbc",
+      "title": "Деловое издание",
+      "topic_hint": "economy"
+    },
+    {
+      "kind": "tg",
+      "handle": "finnews",
+      "url": "https://example.org/finnews",
+      "title": "Финансы дня",
+      "topic_hint": "finance"
+    },
+    {
+      "kind": "rss",
+      "handle": "interfax",
+      "url": "https://example.org/interfax",
+      "title": "Агентство",
+      "topic_hint": "economy"
+    },
+    {
+      "kind": "rss",
+      "handle": "ria",
+      "url": "https://example.org/ria",
+      "title": "Новостное агентство",
+      "topic_hint": "economy"
+    },
+    {
+      "kind": "rss",
+      "handle": "aiblog",
+      "url": "https://example.org/model",
+      "title": "Блог разработчиков",
+      "topic_hint": "tech_ai"
+    },
+    {
+      "kind": "tg",
+      "handle": "aidigest",
+      "url": "https://example.org/aidigest",
+      "title": "ИИ-дайджест",
+      "topic_hint": "tech_ai"
+    },
+    {
+      "kind": "rss",
+      "handle": "habr",
+      "url": "https://example.org/habr",
+      "title": "Технологический портал",
+      "topic_hint": "tech_ai"
+    },
+    {
+      "kind": "tg",
+      "handle": "mskadm",
+      "url": "https://example.org/water",
+      "title": "Администрация города",
+      "topic_hint": "city"
+    },
+    {
+      "kind": "rss",
+      "handle": "mskcity",
+      "url": "https://example.org/city",
+      "title": "Городская лента",
+      "topic_hint": "city"
+    },
+    {
+      "kind": "rss",
+      "handle": "deposits",
+      "url": "https://example.org/deposits",
+      "title": "Обзор рынка",
+      "topic_hint": "finance"
+    },
+    {
+      "kind": "rss",
+      "handle": "dumaweb",
+      "url": "https://example.org/parliament",
+      "title": "Пресс-служба",
+      "topic_hint": "politics"
+    },
+    {
+      "kind": "rss",
+      "handle": "mchs",
+      "url": "https://example.org/mchs",
+      "title": "МЧС",
+      "topic_hint": "incidents"
+    },
+    {
+      "kind": "rss",
+      "handle": "region",
+      "url": "https://example.org/region",
+      "title": "Региональные власти",
+      "topic_hint": "disasters"
+    },
+    {
+      "kind": "rss",
+      "handle": "checknews",
+      "url": "https://example.org/check",
+      "title": "Издание",
+      "topic_hint": "crime"
+    },
+    {
+      "kind": "rss",
+      "handle": "sportfed",
+      "url": "https://example.org/match",
+      "title": "Спортивная федерация",
+      "topic_hint": "sport"
+    },
+    {
+      "kind": "tg",
+      "handle": "adchannel",
+      "url": "https://example.org/ads",
+      "title": "Рекламный канал",
+      "topic_hint": "economy"
+    }
+  ],
+  "stories": [
+    {
+      "topic": "economy",
+      "info_type": "official",
+      "heaviness": "neutral",
+      "title": "Банк России объявил решение по ключевой ставке",
+      "meaning": "Условия по вкладам и кредитам в ближайшие недели заметно не изменятся.",
+      "summary": "Совет директоров Банка России принял решение по ключевой ставке. Регулятор пояснил параметры решения в официальном заявлении.",
+      "post_count": 9,
+      "sources": [
+        "cbr",
+        "rbc",
+        "finnews",
+        "interfax",
+        "ria"
+      ],
+      "hours_ago": 1.8,
+      "region_code": null
+    },
+    {
+      "topic": "tech_ai",
+      "info_type": "fact",
+      "heaviness": "neutral",
+      "title": "Вышла новая открытая языковая модель с сильным русским",
+      "meaning": "Её можно бесплатно запускать на своём сервере, лицензия разрешает коммерческое использование.",
+      "summary": "Разработчики опубликовали веса модели и описание обучения. Лицензия допускает коммерческое использование.",
+      "post_count": 6,
+      "sources": [
+        "aiblog",
+        "aidigest",
+        "habr",
+        "ria"
+      ],
+      "hours_ago": 4.5,
+      "region_code": null
+    },
+    {
+      "topic": "city",
+      "info_type": "official",
+      "heaviness": "neutral",
+      "title": "Утверждён график отключения горячей воды на октябрь",
+      "meaning": "Проверь свой адрес, график по ссылке на первоисточник.",
+      "summary": "Городская администрация опубликовала график плановых отключений горячей воды по районам.",
+      "post_count": 4,
+      "sources": [
+        "mskadm",
+        "mskcity"
+      ],
+      "hours_ago": 6.7,
+      "region_code": "77"
+    },
+    {
+      "topic": "finance",
+      "info_type": "forecast",
+      "heaviness": "neutral",
+      "title": "Аналитики обсуждают, как изменятся ставки по вкладам к зиме",
+      "meaning": null,
+      "summary": "Эксперты расходятся в оценках: часть ожидает снижения доходности, часть — стабильных условий.",
+      "post_count": 3,
+      "sources": [
+        "deposits",
+        "finnews",
+        "rbc"
+      ],
+      "hours_ago": 5.9,
+      "region_code": null
+    },
+    {
+      "topic": "politics",
+      "info_type": "fact",
+      "heaviness": "tense",
+      "title": "Парламент рассмотрел поправки в профильный закон",
+      "meaning": null,
+      "summary": "Депутаты провели обсуждение поправок; голосование назначено на следующую неделю.",
+      "post_count": 5,
+      "sources": [
+        "dumaweb",
+        "ria",
+        "interfax"
+      ],
+      "hours_ago": 7.4,
+      "region_code": null
+    },
+    {
+      "topic": "incidents",
+      "info_type": "fact",
+      "heaviness": "heavy",
+      "title": "Спасатели завершили работы на месте аварии",
+      "meaning": null,
+      "summary": "Работы на месте завершены, движение восстановлено.",
+      "post_count": 7,
+      "sources": [
+        "mchs",
+        "ria",
+        "interfax",
+        "mskcity"
+      ],
+      "hours_ago": 3.6,
+      "region_code": null
+    },
+    {
+      "topic": "disasters",
+      "info_type": "fact",
+      "heaviness": "heavy",
+      "title": "Последствия стихийного бедствия в одном из регионов устраняют",
+      "meaning": null,
+      "summary": "Коммунальные службы восстанавливают инфраструктуру.",
+      "post_count": 6,
+      "sources": [
+        "region",
+        "ria",
+        "interfax"
+      ],
+      "hours_ago": 2.9,
+      "region_code": null
+    },
+    {
+      "topic": "crime",
+      "info_type": "rumor",
+      "heaviness": "heavy",
+      "title": "По данным источников, идёт проверка крупной компании",
+      "meaning": null,
+      "summary": "Информация пока не подтверждена официально.",
+      "post_count": 2,
+      "sources": [
+        "checknews",
+        "rbc"
+      ],
+      "hours_ago": 8.2,
+      "region_code": null
+    },
+    {
+      "topic": "sport",
+      "info_type": "fact",
+      "heaviness": "neutral",
+      "title": "Сборная сыграла вничью в товарищеском матче",
+      "meaning": null,
+      "summary": "Матч завершился вничью, тренер отметил игру обороны.",
+      "post_count": 8,
+      "sources": [
+        "sportfed",
+        "ria",
+        "interfax",
+        "rbc",
+        "mskcity"
+      ],
+      "hours_ago": 5.2,
+      "region_code": null
+    }
+  ],
+  "ads": {
+    "count": 7,
+    "source": "adchannel"
+  },
+  "laws": [
+    {
+      "actions": [
+        "Перенести даты в календаре платежей",
+        "Проверить автоплатёж в банке"
+      ],
+      "region_code": null,
+      "verified": true,
+      "official_url": "https://publication.pravo.gov.ru/",
+      "bill_url": "https://sozd.duma.gov.ru/",
+      "act_number": "№ 000-ФЗ",
+      "title": "Меняется срок уведомлений об авансовых платежах",
+      "what_changed": "Уведомление подаётся раньше прежнего срока. Суммы и ставки не меняются.",
+      "who_affected": "ИП на упрощённой системе с авансовыми платежами. Самозанятых и работающих по найму не касается.",
+      "audience_tags": [
+        "work:ip_usn"
+      ],
+      "status": "signed",
+      "introduced_days": -107,
+      "passed_days": -51,
+      "signed_days": -36,
+      "effective_days": 6
+    },
+    {
+      "actions": [],
+      "region_code": null,
+      "verified": true,
+      "official_url": "https://publication.pravo.gov.ru/",
+      "bill_url": "https://sozd.duma.gov.ru/",
+      "act_number": "№ 000-ФЗ",
+      "title": "Новые правила переоформления ОСАГО при продаже авто",
+      "what_changed": "Порядок переоформления полиса при смене владельца упрощается.",
+      "who_affected": "Владельцы автомобилей, которые продают или покупают машину.",
+      "audience_tags": [
+        "transport:driver"
+      ],
+      "status": "signed",
+      "introduced_days": -136,
+      "passed_days": -73,
+      "signed_days": -57,
+      "effective_days": 157
+    },
+    {
+      "actions": [
+        "Проверить договор аренды"
+      ],
+      "region_code": null,
+      "verified": true,
+      "official_url": null,
+      "bill_url": "https://sozd.duma.gov.ru/",
+      "act_number": null,
+      "title": "Изменяются правила регистрации арендаторов",
+      "what_changed": "Уточняется порядок временной регистрации по месту аренды.",
+      "who_affected": "Люди, которые снимают жильё.",
+      "audience_tags": [
+        "housing:renter"
+      ],
+      "status": "passed",
+      "introduced_days": -86,
+      "passed_days": -15,
+      "effective_days": 67
+    },
+    {
+      "actions": [
+        "Сверить сроки в трудовом договоре"
+      ],
+      "region_code": null,
+      "verified": true,
+      "official_url": null,
+      "bill_url": "https://sozd.duma.gov.ru/",
+      "act_number": null,
+      "title": "Меняется порядок выплаты отпускных",
+      "what_changed": "Уточняются сроки выплаты отпускных работникам.",
+      "who_affected": "Работающие по найму.",
+      "audience_tags": [
+        "work:employee"
+      ],
+      "status": "introduced",
+      "introduced_days": -24
+    },
+    {
+      "actions": [],
+      "region_code": null,
+      "verified": true,
+      "official_url": "https://publication.pravo.gov.ru/",
+      "bill_url": null,
+      "act_number": "№ 000-ФЗ",
+      "title": "Единый порядок уведомлений о платежах в личном кабинете",
+      "what_changed": "Уведомления о платежах будут приходить в единый личный кабинет.",
+      "who_affected": "Все налогоплательщики.",
+      "audience_tags": [
+        "all"
+      ],
+      "status": "signed",
+      "introduced_days": -158,
+      "passed_days": -87,
+      "signed_days": -72,
+      "effective_days": 98
+    },
+    {
+      "actions": [
+        "Оформить карту"
+      ],
+      "region_code": "77",
+      "verified": true,
+      "official_url": "https://example.org/region-act",
+      "bill_url": null,
+      "act_number": null,
+      "title": "Региональная льгота на проезд для студентов",
+      "what_changed": "Вводится льготный тариф на городской транспорт.",
+      "who_affected": "Студенты очной формы обучения в регионе.",
+      "audience_tags": [
+        "work:student",
+        "region:77"
+      ],
+      "status": "signed",
+      "introduced_days": -116,
+      "passed_days": -55,
+      "signed_days": -46,
+      "effective_days": 37
+    },
+    {
+      "actions": [],
+      "region_code": null,
+      "verified": false,
+      "official_url": null,
+      "bill_url": null,
+      "act_number": null,
+      "title": "Черновик закона: не проверен вручную (в API не попадает)",
+      "what_changed": "Тестовая запись для проверки фильтра verified.",
+      "who_affected": "Никого.",
+      "audience_tags": [
+        "all"
+      ],
+      "status": "signed",
+      "introduced_days": -10,
+      "passed_days": -5,
+      "signed_days": -2,
+      "effective_days": 20
+    }
+  ]
+}

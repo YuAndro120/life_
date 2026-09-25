@@ -355,9 +355,9 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 - [x] Локальные уведомления: выпуск по расписанию, напоминания о законах (код есть, на iPhone не проверено, см. revisit.md №20).
 
 ### Фаза 2 — Бэкенд-скелет (2–3 дня) — результат: приложение берёт данные с локального сервера
-- [ ] Миграции по разделу 6, sqlc-запросы.
-- [ ] `GET /v1/feed`, `GET /v1/laws` из сид-данных, ETag и gzip.
-- [ ] iOS APIClient, кэш в SwiftData, pull-to-refresh, офлайн-режим.
+- [x] Миграции по разделу 6, sqlc-запросы.
+- [x] `GET /v1/feed`, `GET /v1/laws` из сид-данных, ETag и gzip.
+- [x] iOS APIClient, кэш в SwiftData, pull-to-refresh, офлайн-режим.
 
 ### Фаза 3 — Сбор источников (2–3 дня)
 - [ ] `seeds/sources.yaml`: 20–40 источников по темам (ИИ, экономика, право, город, технологии). Среди первых — @NeuralProfit, @simply_formula, если проходят проверку статуса.

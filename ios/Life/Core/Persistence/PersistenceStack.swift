@@ -4,7 +4,7 @@ import SwiftData
 enum PersistenceStack {
     static let schema = Schema([
         Profile.self, FilterSettings.self, CachedStory.self, CachedLaw.self,
-        Reminder.self, EditionCounter.self,
+        Reminder.self, EditionCounter.self, CachedMeta.self,
     ])
 
     static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
