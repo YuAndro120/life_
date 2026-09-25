@@ -315,3 +315,6 @@ func functionArgs(resp chatResponse, name string) (json.RawMessage, error) {
 	}
 	return fc.Arguments, nil
 }
+
+// Model — используемая модель (для журнала).
+func (c *Client) Model() string { return c.cfg.Model }

@@ -28,7 +28,7 @@ import (
 	"shtil/backend/internal/db/sqlcgen"
 	"shtil/backend/internal/legal"
 	"shtil/backend/internal/llm"
-	"shtil/backend/internal/llm/gigachat"
+	"shtil/backend/internal/llm/factory"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func run(cmd string, args []string) error {
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	since := fs.String("since", time.Now().AddDate(0, -3, 0).Format("2006-01-02"), "подписаны не раньше этой даты (fetch)")
 	limit := fs.Int("limit", 30, "сколько новых законов обработать за запуск (fetch)")
-	model := fs.String("model", envOr("GIGACHAT_LAW_MODEL", "GigaChat-2-Pro"), "модель GigaChat для разбора законов (GigaChat-2, GigaChat-2-Pro, GigaChat-2-Max)")
+	model := fs.String("model", "", "модель для разбора законов (по умолчанию из окружения провайдера)")
 	_ = fs.Parse(args)
 
 	cfg, err := config.Load()
@@ -84,17 +84,16 @@ func fetch(ctx context.Context, store *legal.PGStore, since string, limit int, m
 	if err != nil {
 		return fmt.Errorf("-since: %w", err)
 	}
-	key := os.Getenv("GIGACHAT_AUTH_KEY")
-	if key == "" {
-		return fmt.Errorf("не задан GIGACHAT_AUTH_KEY")
-	}
-	model, err := gigachat.New(gigachat.Config{AuthKey: key, Scope: os.Getenv("GIGACHAT_SCOPE"), Model: modelName, Log: slog.Default()})
+	_, extractor, name, err := factory.New(slog.Default(), modelName)
 	if err != nil {
 		return err
 	}
-	slog.Info("модель для законов", "модель", modelName)
+	if extractor == nil {
+		return fmt.Errorf("не задан ключ модели для провайдера %s", name)
+	}
+	slog.Info("модель для законов", "провайдер", name)
 	g := &legal.Ingester{
-		Pravo: legal.NewPravo(), Kremlin: legal.NewKremlin(), Extractor: model,
+		Pravo: legal.NewPravo(), Kremlin: legal.NewKremlin(), Extractor: extractor,
 		Store: store, Log: slog.Default(), Now: time.Now, RateLimitWait: 20 * time.Second,
 	}
 	rep, err := g.Run(ctx, from, limit)
@@ -233,11 +232,4 @@ func nonNil(s []string) []string {
 		return []string{}
 	}
 	return s
-}
-
-func envOr(k, def string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
-	return def
 }

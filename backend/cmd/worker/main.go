@@ -24,8 +24,7 @@ import (
 
 	"shtil/backend/internal/cluster"
 	"shtil/backend/internal/config"
-	"shtil/backend/internal/llm"
-	"shtil/backend/internal/llm/gigachat"
+	"shtil/backend/internal/llm/factory"
 	"shtil/backend/internal/pipeline"
 )
 
@@ -71,17 +70,14 @@ func run(cmd string, interval time.Duration, threshold float64, window time.Dura
 		return debugClusters(ctx, store, clusterCfg, hours)
 	}
 
-	var client llm.Client
-	if key := os.Getenv("GIGACHAT_AUTH_KEY"); key != "" {
-		c, err := gigachat.New(gigachat.Config{
-			AuthKey: key, Scope: os.Getenv("GIGACHAT_SCOPE"), Model: os.Getenv("GIGACHAT_MODEL"), Log: slog.Default(),
-		})
-		if err != nil {
-			return err
-		}
-		client = c
+	client, _, name, err := factory.New(slog.Default(), "")
+	if err != nil {
+		return err
+	}
+	if client == nil {
+		slog.Warn("ключ модели не задан: посты только склеиваются, пересказ и публикация отключены", "провайдер", name)
 	} else {
-		slog.Warn("GIGACHAT_AUTH_KEY не задан: посты только склеиваются, пересказ и публикация отключены")
+		slog.Info("модель для пересказа", "провайдер", name)
 	}
 
 	w := pipeline.New(store, client, slog.Default())
