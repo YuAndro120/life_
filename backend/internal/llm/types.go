@@ -98,13 +98,24 @@ func (d Digest) Validate() error {
 	if strings.EqualFold(strings.TrimSpace(d.Summary), strings.TrimSpace(d.Title)) {
 		return errors.New("пересказ совпадает с заголовком")
 	}
-	if speculation.MatchString(d.Meaning) {
-		return errors.New("«значит» содержит предположения (может/возможно/вероятно)")
-	}
-	if n := utf8.RuneCountInString(d.Meaning); n > 320 {
-		return fmt.Errorf("длина «значит» %d больше 320", n)
-	}
 	return nil
+}
+
+// SanitizeMeaning убирает необязательное поле «значит», если оно нарушает правила: содержит предположения
+// (может/возможно/вероятно) или слишком длинное. Остальной ответ остаётся как есть: ради необязательного
+// поля не стоит терять сюжет и платить за повторные запросы. Возвращает причину или пустую строку.
+func (d *Digest) SanitizeMeaning() string {
+	switch {
+	case d.Meaning == "":
+		return ""
+	case speculation.MatchString(d.Meaning):
+		d.Meaning = ""
+		return "«значит» содержало предположения (может/возможно/вероятно)"
+	case utf8.RuneCountInString(d.Meaning) > 320:
+		d.Meaning = ""
+		return "«значит» длиннее 320 символов"
+	}
+	return ""
 }
 
 // shoutingWords считает слова длиннее трёх букв, написанные целиком заглавными (аббревиатуры до 3 букв — норма: ЦБ, МВД).

@@ -149,7 +149,7 @@ func (q *Queries) ListRecentPosts(ctx context.Context, since pgtype.Timestamptz)
 const listStoriesForDigest = `-- name: ListStoriesForDigest :many
 SELECT id, post_count, source_count, has_official_source, digest_attempts
 FROM stories
-WHERE status IN ('draft', 'published')
+WHERE status IN ('draft', 'published') AND post_count > 0
   AND last_post_at <= $1::timestamptz
   AND (title_neutral IS NULL OR post_count > digest_post_count)
   AND digest_attempts < $2::int

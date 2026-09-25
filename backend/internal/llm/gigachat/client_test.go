@@ -388,3 +388,31 @@ func TestMeaningKeptWhenSourcesHaveSubstance(t *testing.T) {
 		t.Fatalf("при содержательных источниках «значит» сохраняется: %v %q", err, d.Meaning)
 	}
 }
+
+func TestSpeculativeMeaningIsDroppedNotRetried(t *testing.T) {
+	f := newFake(t)
+	f.chatResponses = []func(http.ResponseWriter){func(w http.ResponseWriter) {
+		okResponse(w, args(map[string]any{"topic": "economy", "info_type": "official", "heaviness": "neutral", "title": goodTitle, "summary": goodSummary,
+			"meaning": "Изменения могут повлиять на доступность валюты для бизнеса и граждан.", "is_newsworthy": true}))
+	}}
+	in := input()
+	in.Posts[0].Text = strings.Repeat("Подробное сообщение регулятора о новых условиях сделок. ", 8)
+	d, _, err := f.client(t).Digest(context.Background(), in)
+	if err != nil || d.Meaning != "" || d.Title != goodTitle {
+		t.Fatalf("предположение в «значит» убирается, остальной ответ остаётся: %v %+v", err, d)
+	}
+	if f.chatCalls.Load() != 1 {
+		t.Errorf("повторный запрос не нужен (лишние токены): вызовов %d", f.chatCalls.Load())
+	}
+}
+
+func TestRegionCodeWithNameIsInvalid(t *testing.T) {
+	f := newFake(t)
+	bad := func(w http.ResponseWriter) {
+		okResponse(w, args(map[string]any{"topic": "city", "info_type": "fact", "heaviness": "neutral", "region_code": "78 Санкт-Петербург", "title": goodTitle, "summary": goodSummary, "is_newsworthy": true}))
+	}
+	f.chatResponses = []func(http.ResponseWriter){bad, bad, bad}
+	if _, _, err := f.client(t).Digest(context.Background(), input()); !errors.Is(err, llm.ErrInvalid) {
+		t.Fatalf("код региона с названием не должен «чиниться»: %v", err)
+	}
+}
