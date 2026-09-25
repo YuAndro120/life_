@@ -18,3 +18,5 @@ backend/bin/
 
 # infra
 infra/data/
+# подпись
+ios/Life/Config/Local.xcconfig

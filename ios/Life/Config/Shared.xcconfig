@@ -1,0 +1,2 @@
+// Общие настройки. Личные (DEVELOPMENT_TEAM) лежат в Local.xcconfig, которого нет в git.
+#include? "Local.xcconfig"

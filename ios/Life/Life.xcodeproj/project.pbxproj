@@ -107,6 +107,7 @@
 		4DBEAE13479DC2BDF9F97FF3 /* FilterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterEngine.swift; sourceTree = "<group>"; };
 		50B232D3AE27D3EE4B166065 /* DebugLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLaunch.swift; sourceTree = "<group>"; };
 		529286C0B61D87836F00AF76 /* FilterPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterPreferences.swift; sourceTree = "<group>"; };
+		532BD7D00CF6E95EF747ADAB /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		57924BB7B2F91435A4AAD328 /* IBMPlexMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "IBMPlexMono-Medium.ttf"; sourceTree = "<group>"; };
 		59C3A1CCE99961D730F71A36 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		66BDB6C18FD6F586BD5E30E2 /* OFL-Onest.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "OFL-Onest.txt"; sourceTree = "<group>"; };
@@ -249,6 +250,7 @@
 			isa = PBXGroup;
 			children = (
 				FED6A7E5F907CF3FB41716E7 /* App */,
+				C44975119902AFE17D2DCEF2 /* Config */,
 				6F48F1BFAD96901ED612A653 /* Core */,
 				DAC6D9AA87196E6A950DC3D8 /* Features */,
 				152031BF20CAC4697409D12A /* Resources */,
@@ -353,6 +355,14 @@
 				1774F13E5E8D232EE2F23BE7 /* UserProfile.swift */,
 			);
 			path = Filtering;
+			sourceTree = "<group>";
+		};
+		C44975119902AFE17D2DCEF2 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				532BD7D00CF6E95EF747ADAB /* Shared.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		C52E5C180DEED5FB2BC1DFE2 /* UI */ = {
@@ -620,6 +630,7 @@
 		};
 		65F7E1884D8C195FC4FC19AE /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 532BD7D00CF6E95EF747ADAB /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -686,6 +697,7 @@
 		};
 		6A083418FF2585E72BF562D7 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 532BD7D00CF6E95EF747ADAB /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
