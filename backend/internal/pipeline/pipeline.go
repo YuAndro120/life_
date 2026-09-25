@@ -152,6 +152,13 @@ func (w *Worker) digestStories(ctx context.Context, s *Summary) error {
 		if err != nil {
 			return err
 		}
+		if len(posts) == 0 {
+			// Пустой сюжет (например, посты удалены вручную): засчитываем попытку и идём дальше, проход не останавливаем.
+			if err := w.Store.RecordDigestFailure(ctx, c.ID, "в сюжете нет постов"); err != nil {
+				return err
+			}
+			continue
+		}
 		d, usage, err := w.LLM.Digest(ctx, llm.StoryInput{Posts: posts})
 		s.PromptTokens += usage.PromptTokens
 		s.CompletionTokens += usage.CompletionTokens

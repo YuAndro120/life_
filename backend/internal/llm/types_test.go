@@ -46,13 +46,6 @@ func TestValidateRejects(t *testing.T) {
 		},
 		"пустой пересказ":          func(d *Digest) { d.Summary = "" },
 		"пересказ равен заголовку": func(d *Digest) { d.Summary = d.Title },
-		"слишком длинное «значит»": func(d *Digest) { d.Meaning = strings.Repeat("а", 400) },
-		"предположение «может»": func(d *Digest) {
-			d.Meaning = "Изменения могут повлиять на доступность валюты для бизнеса."
-		},
-		"предположение «возможно»": func(d *Digest) {
-			d.Meaning = "Возможно, вклады станут менее выгодными."
-		},
 	}
 	for name, mod := range cases {
 		d := good()
@@ -76,5 +69,28 @@ func TestFactualMeaningIsAllowed(t *testing.T) {
 	d.Meaning = "Ставка по вкладам и кредитам в ближайшие недели заметно не изменится, как отметил регулятор."
 	if err := d.Validate(); err != nil {
 		t.Fatalf("фактическое «значит» допустимо: %v", err)
+	}
+}
+
+func TestSanitizeMeaning(t *testing.T) {
+	cases := []struct {
+		name, meaning string
+		dropped       bool
+	}{
+		{"предположение «могут»", "Изменения могут повлиять на доступность валюты для бизнеса.", true},
+		{"предположение «возможно»", "Возможно, вклады станут менее выгодными.", true},
+		{"предположение «вероятно»", "Вероятно, ставки снизятся.", true},
+		{"слишком длинное", strings.Repeat("а", 400), true},
+		{"фактическое", "Ставка по вкладам и кредитам в ближайшие недели заметно не изменится.", false},
+		{"слово «может» внутри другого слова не считается", "Компания Можетово объявила о слиянии.", false},
+		{"пустое", "", false},
+	}
+	for _, c := range cases {
+		d := good()
+		d.Meaning = c.meaning
+		reason := d.SanitizeMeaning()
+		if (reason != "") != c.dropped || (c.dropped && d.Meaning != "") || (!c.dropped && d.Meaning != c.meaning) {
+			t.Errorf("%s: причина=%q, значит=%q", c.name, reason, d.Meaning)
+		}
 	}
 }

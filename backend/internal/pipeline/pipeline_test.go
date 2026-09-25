@@ -372,3 +372,25 @@ func TestNotNewsworthyStoryIsNeverPublished(t *testing.T) {
 		}
 	}
 }
+
+func TestEmptyStoryIsSkippedAndDoesNotStopTheRun(t *testing.T) {
+	m := newMem()
+	fill(m)
+	// Пустой сюжет (постов нет), созданный «в обход» склейки.
+	id, _ := m.CreateStory(context.Background(), t0)
+	m.stories[id].lastPost = t0
+	l := &fakeLLM{fn: okDigest}
+	sum, err := worker(m, l, t0.Add(2*time.Hour)).RunOnce(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum.Digested != 3 || sum.Stopped != "" {
+		t.Errorf("остальные сюжеты должны быть обработаны: %+v", sum)
+	}
+	if m.stories[id].attempts != 1 || m.stories[id].digestErr == "" {
+		t.Errorf("пустому сюжету засчитывается попытка: %+v", m.stories[id])
+	}
+	if l.calls != 3 {
+		t.Errorf("модель не должна вызываться для пустого сюжета: %d вызовов", l.calls)
+	}
+}

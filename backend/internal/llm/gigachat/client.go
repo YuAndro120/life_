@@ -215,7 +215,7 @@ func digestFunction() chatFunction {
 				"topic":         enum(llm.Topics),
 				"info_type":     enum(llm.InfoTypes),
 				"heaviness":     enum(llm.Heavinesss),
-				"region_code":   map[string]any{"type": "string", "description": "код региона России или пустая строка"},
+				"region_code":   map[string]any{"type": "string", "description": "только цифры кода региона России (например 78), без названия; или пустая строка"},
 				"title":         map[string]any{"type": "string", "description": "нейтральный заголовок, 8–14 слов"},
 				"summary":       map[string]any{"type": "string", "description": "2–3 предложения о том, что произошло"},
 				"meaning":       map[string]any{"type": "string", "description": "что это значит для обычного человека, или пустая строка"},
@@ -293,6 +293,9 @@ func (c *Client) Digest(ctx context.Context, in llm.StoryInput) (llm.Digest, llm
 		d, err := parseDigest(resp)
 		if err == nil {
 			if err = d.Validate(); err == nil {
+				if reason := d.SanitizeMeaning(); reason != "" {
+					c.cfg.Log.Info("«значит» отброшено", "причина", reason)
+				}
 				// Политика: если в источниках только заголовки, «что это значит» модель может лишь домыслить, поэтому его нет.
 				if sourceRunes(in) < minRunesForMeaning && d.Meaning != "" {
 					c.cfg.Log.Info("«значит» отброшено: в источниках только заголовок")

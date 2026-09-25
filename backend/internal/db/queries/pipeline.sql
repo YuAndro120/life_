@@ -45,7 +45,7 @@ WHERE s.id = @story_id;
 -- Сюжеты, которым пора делать пересказ: новых постов нет уже @quiet_for (дебаунс), попыток немного.
 SELECT id, post_count, source_count, has_official_source, digest_attempts
 FROM stories
-WHERE status IN ('draft', 'published')
+WHERE status IN ('draft', 'published') AND post_count > 0
   AND last_post_at <= @quiet_before::timestamptz
   AND (title_neutral IS NULL OR post_count > digest_post_count)
   AND digest_attempts < @max_attempts::int
