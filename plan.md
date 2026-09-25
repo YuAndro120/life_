@@ -386,7 +386,7 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 - [ ] Анимация Building на реальных цифрах первого выпуска.
 
 ### Фаза 7 — Безопасность и деплой (2–3 дня)
-- [ ] VPS, Docker-образы distroless, non-root, read-only FS, внутренняя сеть; наружу только Caddy:443.
+- [x] VPS (общий), Docker-образы distroless, non-root, read-only FS, внутренняя сеть; наружу только `/v1/` через существующий nginx (не Caddy, см. revisit.md №41).
 - [ ] SSH только по ключам через WireGuard, файрвол, автообновления.
 - [ ] Ключ устройства в Secure Enclave, подпись запросов, rate limit.
 - [ ] Certificate pinning в приложении.
