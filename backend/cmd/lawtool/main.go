@@ -46,6 +46,7 @@ func run(cmd string, args []string) error {
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	since := fs.String("since", time.Now().AddDate(0, -3, 0).Format("2006-01-02"), "подписаны не раньше этой даты (fetch)")
 	limit := fs.Int("limit", 30, "сколько новых законов обработать за запуск (fetch)")
+	model := fs.String("model", envOr("GIGACHAT_LAW_MODEL", "GigaChat-2-Pro"), "модель GigaChat для разбора законов (GigaChat-2, GigaChat-2-Pro, GigaChat-2-Max)")
 	_ = fs.Parse(args)
 
 	cfg, err := config.Load()
@@ -63,7 +64,7 @@ func run(cmd string, args []string) error {
 
 	switch cmd {
 	case "fetch":
-		return fetch(ctx, store, *since, *limit)
+		return fetch(ctx, store, *since, *limit, *model)
 	case "review":
 		return review(ctx, store.Queries(), bufio.NewReader(os.Stdin))
 	case "stats":
@@ -78,7 +79,7 @@ func run(cmd string, args []string) error {
 	}
 }
 
-func fetch(ctx context.Context, store *legal.PGStore, since string, limit int) error {
+func fetch(ctx context.Context, store *legal.PGStore, since string, limit int, modelName string) error {
 	from, err := time.Parse("2006-01-02", since)
 	if err != nil {
 		return fmt.Errorf("-since: %w", err)
@@ -87,10 +88,11 @@ func fetch(ctx context.Context, store *legal.PGStore, since string, limit int) e
 	if key == "" {
 		return fmt.Errorf("не задан GIGACHAT_AUTH_KEY")
 	}
-	model, err := gigachat.New(gigachat.Config{AuthKey: key, Scope: os.Getenv("GIGACHAT_SCOPE"), Model: os.Getenv("GIGACHAT_MODEL"), Log: slog.Default()})
+	model, err := gigachat.New(gigachat.Config{AuthKey: key, Scope: os.Getenv("GIGACHAT_SCOPE"), Model: modelName, Log: slog.Default()})
 	if err != nil {
 		return err
 	}
+	slog.Info("модель для законов", "модель", modelName)
 	g := &legal.Ingester{
 		Pravo: legal.NewPravo(), Kremlin: legal.NewKremlin(), Extractor: model,
 		Store: store, Log: slog.Default(), Now: time.Now, RateLimitWait: 20 * time.Second,
@@ -231,4 +233,11 @@ func nonNil(s []string) []string {
 		return []string{}
 	}
 	return s
+}
+
+func envOr(k, def string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return def
 }
