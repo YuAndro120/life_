@@ -1,0 +1,130 @@
+import SwiftUI
+
+/// Ответы «что про тебя важно знать». Используется в онбординге и во вкладке «Профиль».
+struct ProfileForm: View {
+    @Environment(\.theme) private var theme
+    @Environment(AppModel.self) private var model
+    @State private var showRegions = false
+
+    private var isSage: Bool { theme.id == .sage }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            group("01", "О себе") {
+                ForEach(UserProfile.Gender.allCases, id: \.self) { g in
+                    ChipButton(title: g.title, isOn: profile.gender == g) { set { $0.gender = $0.gender == g ? nil : g } }
+                }
+            }
+            group("02", "Возраст") {
+                ForEach(UserProfile.AgeBracket.allCases, id: \.self) { a in
+                    ChipButton(title: a.title, isOn: profile.age == a) { set { $0.age = $0.age == a ? nil : a } }
+                }
+            }
+            group("03", "Работа") {
+                ForEach(UserProfile.Work.allCases, id: \.self) { w in
+                    ChipButton(title: w.title, isOn: profile.work.contains(w)) {
+                        set { if !$0.work.insert(w).inserted { $0.work.remove(w) } }
+                    }
+                }
+            }
+            group("04", "Жильё") {
+                ForEach(UserProfile.Housing.allCases, id: \.self) { h in
+                    ChipButton(title: h.title, isOn: profile.housing.contains(h)) {
+                        set { if !$0.housing.insert(h).inserted { $0.housing.remove(h) } }
+                    }
+                }
+            }
+            group("05", "Транспорт") {
+                ChipButton(title: "Вожу авто", isOn: profile.drives == true) { set { $0.drives = $0.drives == true ? nil : true } }
+                ChipButton(title: "Не вожу", isOn: profile.drives == false) { set { $0.drives = $0.drives == false ? nil : false } }
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                heading("06", "Регион")
+                Button { showRegions = true } label: {
+                    HStack {
+                        Text("Для региональных законов").font(theme.fonts.body(15)).foregroundStyle(theme.ink)
+                        Spacer()
+                        Text(Region.title(for: profile.regionCode).map { "\($0) →" } ?? "Выбрать →").metaStyle(color: theme.accent)
+                    }
+                    .frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .sheet(isPresented: $showRegions) { RegionSheet().environment(\.theme, theme).environment(model) }
+    }
+
+    private var profile: UserProfile { model.profile.snapshot }
+
+    private func set(_ change: (inout UserProfile) -> Void) {
+        var p = model.profile.snapshot
+        change(&p)
+        model.profile.snapshot = p
+        model.save()
+    }
+
+    private func heading(_ index: String, _ title: String) -> some View {
+        Group {
+            if isSage {
+                Text(title).font(theme.fonts.body(15, .semibold)).foregroundStyle(theme.accentDeep)
+            } else {
+                Text("\(index) — \(title)").metaStyle(color: theme.ink)
+            }
+        }
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func group<Content: View>(_ index: String, _ title: String, @ViewBuilder _ chips: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            heading(index, title)
+            FlowLayout(spacing: 8) { chips() }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
+    }
+}
+
+private struct RegionSheet: View {
+    @Environment(\.theme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Регион").font(theme.fonts.heading(22, .semibold)).foregroundStyle(theme.ink)
+                Spacer()
+                Button("Готово") { dismiss() }.font(theme.fonts.body(16, .medium)).foregroundStyle(theme.accent).frame(minHeight: 44)
+            }
+            .padding(.top, 20)
+            ScrollView {
+                VStack(spacing: 0) {
+                    row(title: "Не указывать", code: nil)
+                    ForEach(Region.all) { r in row(title: r.title, code: r.code) }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .background(theme.bg.ignoresSafeArea())
+    }
+
+    private func row(title: String, code: String?) -> some View {
+        VStack(spacing: 0) {
+            Button {
+                var p = model.profile.snapshot
+                p.regionCode = code
+                model.profile.snapshot = p
+                model.save()
+            } label: {
+                HStack {
+                    Text(title).font(theme.fonts.body(17)).foregroundStyle(theme.ink)
+                    Spacer()
+                    if model.profile.regionCode == code { Image(systemName: "checkmark").foregroundStyle(theme.accent) }
+                }
+                .frame(minHeight: 48).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Rule()
+        }
+    }
+}

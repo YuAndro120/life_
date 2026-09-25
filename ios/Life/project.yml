@@ -19,13 +19,24 @@ targets:
       - path: Core
       - path: Features
       - path: Resources
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Life
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIAppFonts:
+          - Onest.ttf
+          - GolosText.ttf
+          - Spectral-Medium.ttf
+          - Spectral-SemiBold.ttf
+          - Spectral-Italic.ttf
+          - IBMPlexMono-Regular.ttf
+          - IBMPlexMono-Medium.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ru.andronov.life
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Life
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         TARGETED_DEVICE_FAMILY: "1"
   LifeTests:
     type: bundle.unit-test
