@@ -11,6 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addTokenUsage = `-- name: AddTokenUsage :exec
+INSERT INTO llm_usage (day, prompt_tokens, completion_tokens) VALUES ($1::date, $2::bigint, $3::bigint)
+ON CONFLICT (day) DO UPDATE SET prompt_tokens = llm_usage.prompt_tokens + EXCLUDED.prompt_tokens,
+                                completion_tokens = llm_usage.completion_tokens + EXCLUDED.completion_tokens
+`
+
+type AddTokenUsageParams struct {
+	Day        pgtype.Date
+	Prompt     int64
+	Completion int64
+}
+
+func (q *Queries) AddTokenUsage(ctx context.Context, arg AddTokenUsageParams) error {
+	_, err := q.db.Exec(ctx, addTokenUsage, arg.Day, arg.Prompt, arg.Completion)
+	return err
+}
+
 const attachPost = `-- name: AttachPost :exec
 UPDATE posts SET story_id = $1 WHERE id = $2
 `
@@ -58,7 +75,7 @@ func (q *Queries) CreateStory(ctx context.Context, arg CreateStoryParams) (int64
 }
 
 const listOpenStoryPosts = `-- name: ListOpenStoryPosts :many
-SELECT p.story_id, p.id, p.source_id, p.text, p.published_at
+SELECT p.story_id, p.id, p.source_id, p.text, p.lang, p.published_at
 FROM posts p
 JOIN stories st ON st.id = p.story_id
 WHERE st.status IN ('draft', 'published') AND st.first_seen_at > $1::timestamptz
@@ -70,6 +87,7 @@ type ListOpenStoryPostsRow struct {
 	ID          int64
 	SourceID    int64
 	Text        string
+	Lang        string
 	PublishedAt pgtype.Timestamptz
 }
 
@@ -88,6 +106,7 @@ func (q *Queries) ListOpenStoryPosts(ctx context.Context, since pgtype.Timestamp
 			&i.ID,
 			&i.SourceID,
 			&i.Text,
+			&i.Lang,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err
@@ -101,7 +120,7 @@ func (q *Queries) ListOpenStoryPosts(ctx context.Context, since pgtype.Timestamp
 }
 
 const listRecentPosts = `-- name: ListRecentPosts :many
-SELECT p.id, p.source_id, p.text, p.published_at, p.story_id, src.title AS source_title, src.kind AS source_kind
+SELECT p.id, p.source_id, p.text, p.lang, p.published_at, p.story_id, src.title AS source_title, src.kind AS source_kind
 FROM posts p JOIN sources src ON src.id = p.source_id
 WHERE p.published_at > $1::timestamptz AND NOT p.is_ad
 ORDER BY p.published_at, p.id
@@ -111,6 +130,7 @@ type ListRecentPostsRow struct {
 	ID          int64
 	SourceID    int64
 	Text        string
+	Lang        string
 	PublishedAt pgtype.Timestamptz
 	StoryID     pgtype.Int8
 	SourceTitle string
@@ -131,6 +151,7 @@ func (q *Queries) ListRecentPosts(ctx context.Context, since pgtype.Timestamptz)
 			&i.ID,
 			&i.SourceID,
 			&i.Text,
+			&i.Lang,
 			&i.PublishedAt,
 			&i.StoryID,
 			&i.SourceTitle,
@@ -152,8 +173,9 @@ FROM stories
 WHERE status IN ('draft', 'published') AND post_count > 0
   AND last_post_at <= $1::timestamptz
   AND (title_neutral IS NULL OR post_count > digest_post_count)
+  AND (source_count >= 2 OR has_official_source)
   AND digest_attempts < $2::int
-ORDER BY last_post_at
+ORDER BY source_count DESC, last_post_at
 LIMIT $3::int
 `
 
@@ -172,6 +194,8 @@ type ListStoriesForDigestRow struct {
 }
 
 // Сюжеты, которым пора делать пересказ: новых постов нет уже @quiet_for (дебаунс), попыток немного.
+// Только те, что могут быть опубликованы (≥ 2 источников или официальный): остальные не стоит тратить токены.
+// Сначала самые весомые (больше источников).
 func (q *Queries) ListStoriesForDigest(ctx context.Context, arg ListStoriesForDigestParams) ([]ListStoriesForDigestRow, error) {
 	rows, err := q.db.Query(ctx, listStoriesForDigest, arg.QuietBefore, arg.MaxAttempts, arg.Batch)
 	if err != nil {
@@ -199,7 +223,7 @@ func (q *Queries) ListStoriesForDigest(ctx context.Context, arg ListStoriesForDi
 }
 
 const listStoryPostsForDigest = `-- name: ListStoryPostsForDigest :many
-SELECT p.id, p.url, p.published_at, p.text, src.title AS source_title, src.kind AS source_kind
+SELECT p.id, p.url, p.published_at, p.text, p.lang, src.title AS source_title, src.kind AS source_kind
 FROM posts p JOIN sources src ON src.id = p.source_id
 WHERE p.story_id = $1
 ORDER BY p.published_at
@@ -216,6 +240,7 @@ type ListStoryPostsForDigestRow struct {
 	Url         string
 	PublishedAt pgtype.Timestamptz
 	Text        string
+	Lang        string
 	SourceTitle string
 	SourceKind  string
 }
@@ -234,6 +259,7 @@ func (q *Queries) ListStoryPostsForDigest(ctx context.Context, arg ListStoryPost
 			&i.Url,
 			&i.PublishedAt,
 			&i.Text,
+			&i.Lang,
 			&i.SourceTitle,
 			&i.SourceKind,
 		); err != nil {
@@ -248,7 +274,7 @@ func (q *Queries) ListStoryPostsForDigest(ctx context.Context, arg ListStoryPost
 }
 
 const listUnclusteredPosts = `-- name: ListUnclusteredPosts :many
-SELECT p.id, p.source_id, p.url, p.published_at, p.text, s.title AS source_title, s.kind AS source_kind
+SELECT p.id, p.source_id, p.url, p.published_at, p.text, p.lang, s.title AS source_title, s.kind AS source_kind
 FROM posts p
 JOIN sources s ON s.id = p.source_id
 WHERE p.story_id IS NULL AND NOT p.is_ad AND p.published_at > $1::timestamptz
@@ -261,6 +287,7 @@ type ListUnclusteredPostsRow struct {
 	Url         string
 	PublishedAt pgtype.Timestamptz
 	Text        string
+	Lang        string
 	SourceTitle string
 	SourceKind  string
 }
@@ -281,6 +308,7 @@ func (q *Queries) ListUnclusteredPosts(ctx context.Context, since pgtype.Timesta
 			&i.Url,
 			&i.PublishedAt,
 			&i.Text,
+			&i.Lang,
 			&i.SourceTitle,
 			&i.SourceKind,
 		); err != nil {
@@ -328,10 +356,14 @@ UPDATE stories s SET
     source_count = c.sources,
     has_official_source = c.official,
     last_post_at = c.last_at,
+    country = c.country,
+    lang = COALESCE(c.lang, s.lang),
     updated_at = GREATEST(s.updated_at, c.last_at)
 FROM (
     SELECT count(*)::int AS n, count(DISTINCT p.source_id)::int AS sources,
-           bool_or(src.kind = 'gov') AS official, max(p.published_at) AS last_at
+           bool_or(src.kind = 'gov') AS official, max(p.published_at) AS last_at,
+           mode() WITHIN GROUP (ORDER BY src.country) AS country,
+           mode() WITHIN GROUP (ORDER BY p.lang) AS lang
     FROM posts p JOIN sources src ON src.id = p.source_id
     WHERE p.story_id = $1
 ) c
@@ -381,6 +413,17 @@ func (q *Queries) SaveStoryDigest(ctx context.Context, arg SaveStoryDigestParams
 		arg.ID,
 	)
 	return err
+}
+
+const tokensUsedToday = `-- name: TokensUsedToday :one
+SELECT COALESCE(sum(prompt_tokens + completion_tokens), 0)::bigint FROM llm_usage WHERE day = $1::date
+`
+
+func (q *Queries) TokensUsedToday(ctx context.Context, day pgtype.Date) (int64, error) {
+	row := q.db.QueryRow(ctx, tokensUsedToday, day)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const unpublishWeakStories = `-- name: UnpublishWeakStories :execrows

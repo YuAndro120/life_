@@ -12,18 +12,21 @@ type Source struct {
 }
 
 type Story struct {
-	ID          string    `json:"id"`
-	Topic       string    `json:"topic"`
-	InfoType    string    `json:"info_type"`
-	Heaviness   string    `json:"heaviness"`
-	Title       string    `json:"title"`
-	Meaning     *string   `json:"meaning"`
-	Summary     string    `json:"summary"`
-	PostCount   int       `json:"post_count"`
-	SourceCount int       `json:"source_count"`
-	Sources     []Source  `json:"sources"`
-	RegionCode  *string   `json:"region_code"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string   `json:"id"`
+	Topic       string   `json:"topic"`
+	InfoType    string   `json:"info_type"`
+	Heaviness   string   `json:"heaviness"`
+	Title       string   `json:"title"`
+	Meaning     *string  `json:"meaning"`
+	Summary     string   `json:"summary"`
+	PostCount   int      `json:"post_count"`
+	SourceCount int      `json:"source_count"`
+	Sources     []Source `json:"sources"`
+	RegionCode  *string  `json:"region_code"`
+	// Country — страна большинства источников сюжета (RU, US, GB, EU); nil, если не указана.
+	Country   *string   `json:"country"`
+	Lang      string    `json:"lang"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type FeedStats struct {

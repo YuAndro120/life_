@@ -90,6 +90,8 @@ services:
       DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
       GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
       GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat-2}
+      # Дневной лимит токенов модели (защита от неожиданных расходов). Около 800 токенов на сюжет.
+      WORKER_DAILY_TOKENS: ${WORKER_DAILY_TOKENS:-100000}
     depends_on:
       migrate: {condition: service_completed_successfully}
     mem_limit: 96m

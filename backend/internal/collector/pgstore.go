@@ -21,7 +21,10 @@ func (s *PGStore) ActiveSources(ctx context.Context) ([]Source, error) {
 	}
 	out := make([]Source, 0, len(rows))
 	for _, r := range rows {
-		src := Source{ID: r.ID, Kind: r.Kind, Handle: r.Handle, URL: r.Url, Title: r.Title, Failures: int(r.ConsecutiveFailures)}
+		src := Source{ID: r.ID, Kind: r.Kind, Handle: r.Handle, URL: r.Url, Title: r.Title, Lang: r.Lang, Failures: int(r.ConsecutiveFailures)}
+		if r.Country.Valid {
+			src.Country = r.Country.String
+		}
 		if r.LastFetchedAt.Valid {
 			t := r.LastFetchedAt.Time
 			src.LastFetchedAt = &t
@@ -38,6 +41,7 @@ func (s *PGStore) InsertPost(ctx context.Context, sourceID int64, p Post) (bool,
 		Url:         p.URL,
 		PublishedAt: pgtype.Timestamptz{Time: p.PublishedAt, Valid: true},
 		Text:        p.Text,
+		Lang:        p.Lang,
 		IsAd:        p.IsAd,
 		AdSuspected: p.AdSuspected,
 	})

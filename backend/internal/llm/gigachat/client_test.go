@@ -270,8 +270,8 @@ func TestRequestShapeAndPromptInjectionIsData(t *testing.T) {
 		t.Error("текст поста должен идти только в пользовательском сообщении")
 	}
 	props := req.Functions[0].Parameters["properties"].(map[string]any)
-	if topic := props["topic"].(map[string]any)["enum"].([]any); len(topic) != 18 {
-		t.Errorf("в схеме темы должно быть 18 значений, %d", len(topic))
+	if topic := props["topic"].(map[string]any)["enum"].([]any); len(topic) != 19 {
+		t.Errorf("в схеме темы должно быть 19 значений, %d", len(topic))
 	}
 }
 

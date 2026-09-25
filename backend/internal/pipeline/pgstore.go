@@ -27,7 +27,7 @@ func (s *PGStore) UnclusteredPosts(ctx context.Context, since time.Time) ([]clus
 	}
 	out := make([]cluster.Doc, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, cluster.Doc{ID: r.ID, SourceID: r.SourceID, Text: r.Text, At: r.PublishedAt.Time})
+		out = append(out, cluster.Doc{ID: r.ID, SourceID: r.SourceID, Text: r.Text, Lang: r.Lang, At: r.PublishedAt.Time})
 	}
 	return out, nil
 }
@@ -49,7 +49,7 @@ func (s *PGStore) OpenStories(ctx context.Context, since time.Time) ([]cluster.S
 			idx[r.StoryID.Int64] = i
 			out = append(out, cluster.Story{ID: r.StoryID.Int64})
 		}
-		out[i].Docs = append(out[i].Docs, cluster.Doc{ID: r.ID, SourceID: r.SourceID, Text: r.Text, At: r.PublishedAt.Time})
+		out[i].Docs = append(out[i].Docs, cluster.Doc{ID: r.ID, SourceID: r.SourceID, Text: r.Text, Lang: r.Lang, At: r.PublishedAt.Time})
 	}
 	return out, nil
 }
@@ -90,7 +90,7 @@ func (s *PGStore) StoryPosts(ctx context.Context, storyID int64, limit int) ([]l
 	}
 	out := make([]llm.Post, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, llm.Post{SourceTitle: r.SourceTitle, SourceKind: r.SourceKind, URL: r.Url, PublishedAt: r.PublishedAt.Time, Text: r.Text})
+		out = append(out, llm.Post{SourceTitle: r.SourceTitle, SourceKind: r.SourceKind, Lang: r.Lang, URL: r.Url, PublishedAt: r.PublishedAt.Time, Text: r.Text})
 	}
 	return out, nil
 }
@@ -107,6 +107,18 @@ func (s *PGStore) RecordDigestFailure(ctx context.Context, storyID int64, msg st
 		msg = msg[:300]
 	}
 	return s.q.RecordDigestFailure(ctx, sqlcgen.RecordDigestFailureParams{ID: storyID, Error: msg})
+}
+
+func dayOf(t time.Time) pgtype.Date {
+	return pgtype.Date{Time: t.UTC().Truncate(24 * time.Hour), Valid: true}
+}
+
+func (s *PGStore) TokensUsed(ctx context.Context, day time.Time) (int64, error) {
+	return s.q.TokensUsedToday(ctx, dayOf(day))
+}
+
+func (s *PGStore) AddTokens(ctx context.Context, day time.Time, prompt, completion int) error {
+	return s.q.AddTokenUsage(ctx, sqlcgen.AddTokenUsageParams{Day: dayOf(day), Prompt: int64(prompt), Completion: int64(completion)})
 }
 
 func (s *PGStore) Publish(ctx context.Context) (int64, int64, error) {
@@ -134,7 +146,7 @@ func (s *PGStore) RecentPosts(ctx context.Context, since time.Time) ([]RecentPos
 	out := make([]RecentPost, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, RecentPost{
-			Doc:         cluster.Doc{ID: r.ID, SourceID: r.SourceID, Text: r.Text, At: r.PublishedAt.Time},
+			Doc:         cluster.Doc{ID: r.ID, SourceID: r.SourceID, Text: r.Text, Lang: r.Lang, At: r.PublishedAt.Time},
 			SourceTitle: r.SourceTitle, SourceKind: r.SourceKind, StoryID: r.StoryID.Int64,
 		})
 	}

@@ -129,3 +129,49 @@ func TestScoresAreReported(t *testing.T) {
 		t.Errorf("второй пост должен присоединиться с оценкой >= 0.3: %+v", assign[1])
 	}
 }
+
+func en(id int64, source int64, minutes int, text string) Doc {
+	d := doc(id, source, minutes, text)
+	d.Lang = "en"
+	return d
+}
+
+func TestEnglishHeadlinesFromDifferentOutletsMerge(t *testing.T) {
+	docs := []Doc{
+		en(1, 1, 0, "NASA delays Artemis III moon landing to 2028 after heat shield review"),
+		en(2, 2, 5, "Artemis III moon mission delayed to 2028, NASA says, as heat shield tests continue"),
+		en(3, 3, 9, "Mars Sample Return mission cancelled as NASA budget shrinks"),
+		en(4, 1, 20, "UK inflation falls to 3.1% in August, ONS says"),
+	}
+	assign, _ := Assign(DefaultConfig(), nil, docs)
+	g := groupOf(assign)
+	if g[1] != g[2] {
+		t.Errorf("два заголовка про Artemis III не склеились: %v", g)
+	}
+	if g[3] == g[1] || g[4] == g[1] || g[3] == g[4] {
+		t.Errorf("разные события не должны склеиваться: %v", g)
+	}
+}
+
+func TestDifferentLanguagesNeverMerge(t *testing.T) {
+	ru := doc(1, 1, 0, "Банк России сохранил ключевую ставку на уровне 16% годовых")
+	ru.Lang = "ru"
+	// Заведомо совпадающий по словам «английский» пост с теми же токенами.
+	enPost := doc(2, 2, 3, "Банк России сохранил ключевую ставку на уровне 16% годовых")
+	enPost.Lang = "en"
+	assign, _ := Assign(DefaultConfig(), nil, []Doc{ru, enPost})
+	g := groupOf(assign)
+	if g[1] == g[2] {
+		t.Error("посты на разных языках не должны склеиваться")
+	}
+}
+
+func TestMissingLangIsCompatible(t *testing.T) {
+	a := doc(1, 1, 0, corpus[0].Text) // Lang пуст
+	b := doc(2, 2, 3, corpus[1].Text)
+	b.Lang = "ru"
+	assign, _ := Assign(DefaultConfig(), nil, []Doc{a, b})
+	if g := groupOf(assign); g[1] != g[2] {
+		t.Error("пустой язык совместим с любым (старые записи)")
+	}
+}

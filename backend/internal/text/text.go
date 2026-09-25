@@ -91,7 +91,18 @@ func stem(w string) string {
 	if len(r) > stemLen && unicode.Is(unicode.Cyrillic, r[0]) {
 		return string(r[:stemLen])
 	}
-	if len(r) > 8 { // длинные латинские слова
+	return stemLatin(w)
+}
+
+// stemLatin — простая основа для английских слов: launches/launched/launching -> launch, rockets -> rocket.
+func stemLatin(w string) string {
+	for _, suf := range []string{"ing", "ed", "es", "ly", "s"} {
+		if len(w) > len(suf)+3 && strings.HasSuffix(w, suf) {
+			w = strings.TrimSuffix(w, suf)
+			break
+		}
+	}
+	if r := []rune(w); len(r) > 8 {
 		return string(r[:8])
 	}
 	return w
@@ -105,7 +116,7 @@ var stop = func() map[string]bool {
 этого какой совсем ним здесь этом один почти мой тем чтобы нее сейчас были куда зачем всех никогда можно при наконец два об другой хоть
 после над больше тот через эти нас про всего них какая много разве три эту моя впрочем свою этой перед иногда чуть том нельзя такой им более
 всегда конечно всю между заявил заявила сообщил сообщила сообщает отметил отметила рассказал рассказала также которые который которая
-the a an of to in on for and or is are was were be by with at from that this it as`) {
+the a an of to in on for and or is are was were be by with at from that this it as said says will would has have had after over new not but its their they you can out up about more than who what when how also into his her our us one two been being just amid ahead per than then there these those while during before against between`) {
 		m[w] = true
 	}
 	return m

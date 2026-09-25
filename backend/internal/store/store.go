@@ -65,6 +65,8 @@ func (p *Postgres) Feed(ctx context.Context, since time.Time) (api.Feed, error) 
 			SourceCount: int(r.SourceCount),
 			Sources:     sources,
 			RegionCode:  textPtr(r.RegionCode),
+			Country:     textPtr(r.Country),
+			Lang:        r.Lang,
 			UpdatedAt:   updated,
 		})
 	}

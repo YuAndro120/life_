@@ -15,6 +15,7 @@ import (
 type Post struct {
 	SourceTitle string
 	SourceKind  string
+	Lang        string // ru, en …
 	URL         string
 	PublishedAt time.Time
 	Text        string
@@ -53,7 +54,7 @@ var ErrInvalid = errors.New("модель вернула некорректны�
 var (
 	Topics = []string{
 		"economy", "finance", "law", "tech_ai", "city", "health", "education", "transport", "housing",
-		"science", "culture", "sport", "showbiz", "crypto", "politics", "crime", "incidents", "disasters",
+		"science", "space", "culture", "sport", "showbiz", "crypto", "politics", "crime", "incidents", "disasters",
 	}
 	InfoTypes  = []string{"fact", "official", "opinion", "forecast", "rumor"}
 	Heavinesss = []string{"neutral", "tense", "heavy"}
@@ -95,6 +96,11 @@ func (d Digest) Validate() error {
 	if n := utf8.RuneCountInString(d.Summary); n < 40 || n > 700 {
 		return fmt.Errorf("длина пересказа %d вне диапазона 40–700", n)
 	}
+	for name, field := range map[string]string{"заголовок": d.Title, "пересказ": d.Summary, "«значит»": d.Meaning} {
+		if w := mixedScriptWord(field); w != "" {
+			return fmt.Errorf("%s: в слове %q смешаны кириллица и латиница", name, w)
+		}
+	}
 	if strings.EqualFold(strings.TrimSpace(d.Summary), strings.TrimSpace(d.Title)) {
 		return errors.New("пересказ совпадает с заголовком")
 	}
@@ -114,6 +120,26 @@ func (d *Digest) SanitizeMeaning() string {
 	case utf8.RuneCountInString(d.Meaning) > 320:
 		d.Meaning = ""
 		return "«значит» длиннее 320 символов"
+	}
+	return ""
+}
+
+// mixedScriptWord возвращает первое слово, в котором перемешаны кириллица и латиница («Тommo», «Mосква»):
+// так проявляются сбои перевода имён. Слова целиком латиницей (NASA, SpaceX) допустимы.
+func mixedScriptWord(s string) string {
+	for _, w := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && r != '-' }) {
+		var cyr, lat bool
+		for _, r := range w {
+			switch {
+			case unicode.Is(unicode.Cyrillic, r):
+				cyr = true
+			case unicode.Is(unicode.Latin, r):
+				lat = true
+			}
+		}
+		if cyr && lat {
+			return w
+		}
 	}
 	return ""
 }

@@ -91,3 +91,28 @@ func TestRealCatalog(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCountryAndLangValidation(t *testing.T) {
+	ok, err := parse(t, "sources:\n  - {kind: rss, handle: g, url: \"https://a.test/rss\", title: G, country: GB, lang: en}\n  - {kind: rss, handle: r, url: \"https://b.test/rss\", title: R}\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok[0].Country != "GB" || ok[0].Lang != "en" || ok[1].Lang != "ru" || ok[1].Country != "" {
+		t.Errorf("%+v", ok)
+	}
+	for name, entry := range map[string]string{
+		"страна строчными":        `{kind: rss, handle: a, url: "https://a.test", title: A, country: gb}`,
+		"страна не двухбуквенная": `{kind: rss, handle: a, url: "https://a.test", title: A, country: USA}`,
+		"язык заглавными":         `{kind: rss, handle: a, url: "https://a.test", title: A, lang: EN}`,
+	} {
+		if _, err := parse(t, "sources:\n  - "+entry+"\n"); err == nil {
+			t.Errorf("%s: ожидалась ошибка", name)
+		}
+	}
+}
+
+func TestSpaceTopicHintAllowed(t *testing.T) {
+	if _, err := parse(t, "sources:\n  - {kind: gov, handle: nasa, url: \"https://www.nasa.gov/feed/\", title: NASA, topic_hint: space, country: US, lang: en}\n"); err != nil {
+		t.Fatal(err)
+	}
+}

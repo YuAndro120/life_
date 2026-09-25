@@ -13,7 +13,7 @@ import (
 
 const insertPost = `-- name: InsertPost :execrows
 INSERT INTO posts (source_id, external_id, url, published_at, text, lang, is_ad, ad_suspected)
-VALUES ($1, $2, $3, $4, $5, 'ru', $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (source_id, external_id) DO NOTHING
 `
 
@@ -23,6 +23,7 @@ type InsertPostParams struct {
 	Url         string
 	PublishedAt pgtype.Timestamptz
 	Text        string
+	Lang        string
 	IsAd        bool
 	AdSuspected bool
 }
@@ -35,6 +36,7 @@ func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (int64, 
 		arg.Url,
 		arg.PublishedAt,
 		arg.Text,
+		arg.Lang,
 		arg.IsAd,
 		arg.AdSuspected,
 	)
@@ -45,7 +47,7 @@ func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (int64, 
 }
 
 const listActiveSources = `-- name: ListActiveSources :many
-SELECT id, kind, handle, url, title, topic_hint, last_fetched_at, consecutive_failures
+SELECT id, kind, handle, url, title, topic_hint, country, lang, last_fetched_at, consecutive_failures
 FROM sources
 WHERE active AND legal_status = 'ok' AND legal_checked_at IS NOT NULL
 ORDER BY id
@@ -58,6 +60,8 @@ type ListActiveSourcesRow struct {
 	Url                 string
 	Title               string
 	TopicHint           pgtype.Text
+	Country             pgtype.Text
+	Lang                string
 	LastFetchedAt       pgtype.Timestamptz
 	ConsecutiveFailures int32
 }
@@ -78,6 +82,8 @@ func (q *Queries) ListActiveSources(ctx context.Context) ([]ListActiveSourcesRow
 			&i.Url,
 			&i.Title,
 			&i.TopicHint,
+			&i.Country,
+			&i.Lang,
 			&i.LastFetchedAt,
 			&i.ConsecutiveFailures,
 		); err != nil {
@@ -125,12 +131,14 @@ func (q *Queries) RecordFetchSuccess(ctx context.Context, arg RecordFetchSuccess
 }
 
 const upsertSource = `-- name: UpsertSource :exec
-INSERT INTO sources (kind, handle, url, title, topic_hint, legal_status, legal_checked_at, active)
-VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8)
+INSERT INTO sources (kind, handle, url, title, topic_hint, country, lang, legal_status, legal_checked_at, active)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::date, $10)
 ON CONFLICT (kind, handle) DO UPDATE SET
     url = EXCLUDED.url,
     title = EXCLUDED.title,
     topic_hint = EXCLUDED.topic_hint,
+    country = EXCLUDED.country,
+    lang = EXCLUDED.lang,
     legal_status = EXCLUDED.legal_status,
     legal_checked_at = EXCLUDED.legal_checked_at,
     active = EXCLUDED.active
@@ -142,6 +150,8 @@ type UpsertSourceParams struct {
 	Url            string
 	Title          string
 	TopicHint      pgtype.Text
+	Country        pgtype.Text
+	Lang           string
 	LegalStatus    string
 	LegalCheckedAt pgtype.Date
 	Active         bool
@@ -155,6 +165,8 @@ func (q *Queries) UpsertSource(ctx context.Context, arg UpsertSourceParams) erro
 		arg.Url,
 		arg.Title,
 		arg.TopicHint,
+		arg.Country,
+		arg.Lang,
 		arg.LegalStatus,
 		arg.LegalCheckedAt,
 		arg.Active,

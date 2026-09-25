@@ -22,12 +22,15 @@ type Source struct {
 	Handle        string
 	URL           string
 	Title         string
+	Country       string
+	Lang          string
 	LastFetchedAt *time.Time
 	Failures      int
 }
 
 type Post struct {
 	sources.RawPost
+	Lang        string
 	IsAd        bool
 	AdSuspected bool
 }
@@ -173,7 +176,7 @@ func (r *Runner) collect(ctx context.Context, s Source) result {
 		}
 		res.Fetched++
 		verdict := ads.Detect(raw.Text)
-		post := Post{RawPost: raw, IsAd: verdict.Verdict == ads.Definite, AdSuspected: verdict.Verdict == ads.Suspected}
+		post := Post{RawPost: raw, Lang: langOf(s), IsAd: verdict.Verdict == ads.Definite, AdSuspected: verdict.Verdict == ads.Suspected}
 		inserted, err := r.Store.InsertPost(ctx, s.ID, post)
 		if err != nil {
 			log.Error("пост не сохранён", "err", err, "external_id", raw.ExternalID)
@@ -211,6 +214,13 @@ func (r *Runner) fetchPosts(ctx context.Context, s Source, now time.Time) ([]sou
 	default:
 		return nil, errors.New("тип источника «" + s.Kind + "» пока не поддерживается")
 	}
+}
+
+func langOf(s Source) string {
+	if s.Lang == "" {
+		return "ru"
+	}
+	return s.Lang
 }
 
 func hostOf(raw string) string {

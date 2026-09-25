@@ -30,6 +30,9 @@ type Store interface {
 	StoryPosts(ctx context.Context, storyID int64, limit int) ([]llm.Post, error)
 	SaveDigest(ctx context.Context, storyID int64, d llm.Digest, at time.Time) error
 	RecordDigestFailure(ctx context.Context, storyID int64, msg string) error
+	// Учёт токенов модели по дням (дневной лимит).
+	TokensUsed(ctx context.Context, day time.Time) (int64, error)
+	AddTokens(ctx context.Context, day time.Time, prompt, completion int) error
 	// Публикация: сюжет с ≥ 2 источниками или из официального источника (раздел 9 плана).
 	Publish(ctx context.Context) (published, unpublished int64, err error)
 }
@@ -49,6 +52,8 @@ type Worker struct {
 	Batch int
 	// PostsPerStory — сколько постов сюжета передавать модели.
 	PostsPerStory int
+	// DailyTokenBudget — сколько токенов модели можно потратить за сутки (0 — без ограничения).
+	DailyTokenBudget int64
 }
 
 func New(store Store, client llm.Client, log *slog.Logger) *Worker {
@@ -144,9 +149,20 @@ func (w *Worker) digestStories(ctx context.Context, s *Summary) error {
 	if err != nil {
 		return err
 	}
+	var used int64
+	if w.DailyTokenBudget > 0 {
+		if used, err = w.Store.TokensUsed(ctx, w.Now()); err != nil {
+			return err
+		}
+	}
 	for _, c := range candidates {
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if w.DailyTokenBudget > 0 && used >= w.DailyTokenBudget {
+			s.Stopped = fmt.Sprintf("дневной лимит токенов исчерпан (%d из %d)", used, w.DailyTokenBudget)
+			w.Log.Warn("пересказ остановлен", "причина", s.Stopped)
+			return nil
 		}
 		posts, err := w.Store.StoryPosts(ctx, c.ID, w.PostsPerStory)
 		if err != nil {
@@ -162,6 +178,12 @@ func (w *Worker) digestStories(ctx context.Context, s *Summary) error {
 		d, usage, err := w.LLM.Digest(ctx, llm.StoryInput{Posts: posts})
 		s.PromptTokens += usage.PromptTokens
 		s.CompletionTokens += usage.CompletionTokens
+		used += int64(usage.PromptTokens + usage.CompletionTokens)
+		if usage.PromptTokens+usage.CompletionTokens > 0 {
+			if err := w.Store.AddTokens(ctx, w.Now(), usage.PromptTokens, usage.CompletionTokens); err != nil {
+				return err
+			}
+		}
 		switch {
 		case err == nil:
 			if err := w.Store.SaveDigest(ctx, c.ID, d, w.Now()); err != nil {

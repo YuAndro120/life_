@@ -11,6 +11,8 @@ SELECT
     s.post_count,
     s.source_count,
     s.region_code,
+    s.country,
+    s.lang,
     s.updated_at,
     COALESCE((
         SELECT jsonb_agg(jsonb_build_object('title', src.title, 'url', fp.url) ORDER BY src.title)
