@@ -11,6 +11,180 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countLaws = `-- name: CountLaws :one
+SELECT
+    count(*) FILTER (WHERE verified)                       AS verified,
+    count(*) FILTER (WHERE NOT verified AND NOT rejected)  AS drafts,
+    count(*) FILTER (WHERE rejected)                       AS rejected
+FROM law_changes
+`
+
+type CountLawsRow struct {
+	Verified int64
+	Drafts   int64
+	Rejected int64
+}
+
+func (q *Queries) CountLaws(ctx context.Context) (CountLawsRow, error) {
+	row := q.db.QueryRow(ctx, countLaws)
+	var i CountLawsRow
+	err := row.Scan(&i.Verified, &i.Drafts, &i.Rejected)
+	return i, err
+}
+
+const insertLawDraft = `-- name: InsertLawDraft :one
+INSERT INTO law_changes (
+    eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
+    passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+)
+ON CONFLICT (eo_number) DO NOTHING
+RETURNING id
+`
+
+type InsertLawDraftParams struct {
+	EoNumber     pgtype.Text
+	Title        string
+	WhatChanged  string
+	WhoAffected  string
+	Actions      []byte
+	AudienceTags []string
+	RegionCode   pgtype.Text
+	Status       string
+	PassedAt     pgtype.Date
+	SignedAt     pgtype.Date
+	EffectiveAt  pgtype.Date
+	OfficialUrl  pgtype.Text
+	SourceUrl    pgtype.Text
+	ActNumber    pgtype.Text
+	Quotes       []byte
+}
+
+func (q *Queries) InsertLawDraft(ctx context.Context, arg InsertLawDraftParams) (int64, error) {
+	row := q.db.QueryRow(ctx, insertLawDraft,
+		arg.EoNumber,
+		arg.Title,
+		arg.WhatChanged,
+		arg.WhoAffected,
+		arg.Actions,
+		arg.AudienceTags,
+		arg.RegionCode,
+		arg.Status,
+		arg.PassedAt,
+		arg.SignedAt,
+		arg.EffectiveAt,
+		arg.OfficialUrl,
+		arg.SourceUrl,
+		arg.ActNumber,
+		arg.Quotes,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertRejectedLaw = `-- name: InsertRejectedLaw :exec
+INSERT INTO law_changes (eo_number, title, what_changed, who_affected, status, signed_at, act_number, rejected, reject_reason)
+VALUES ($1, $2, '', '', 'signed', $3, $4, true, $5)
+ON CONFLICT (eo_number) DO NOTHING
+`
+
+type InsertRejectedLawParams struct {
+	EoNumber     pgtype.Text
+	Title        string
+	SignedAt     pgtype.Date
+	ActNumber    pgtype.Text
+	RejectReason pgtype.Text
+}
+
+// Отклонённые сохраняются, чтобы не обрабатывать один и тот же закон повторно.
+func (q *Queries) InsertRejectedLaw(ctx context.Context, arg InsertRejectedLawParams) error {
+	_, err := q.db.Exec(ctx, insertRejectedLaw,
+		arg.EoNumber,
+		arg.Title,
+		arg.SignedAt,
+		arg.ActNumber,
+		arg.RejectReason,
+	)
+	return err
+}
+
+const lawSeen = `-- name: LawSeen :one
+SELECT EXISTS (SELECT 1 FROM law_changes WHERE eo_number = $1)
+`
+
+func (q *Queries) LawSeen(ctx context.Context, eoNumber pgtype.Text) (bool, error) {
+	row := q.db.QueryRow(ctx, lawSeen, eoNumber)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const listLawDrafts = `-- name: ListLawDrafts :many
+SELECT id, eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
+       passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes
+FROM law_changes
+WHERE NOT verified AND NOT rejected
+ORDER BY effective_at NULLS LAST, id
+`
+
+type ListLawDraftsRow struct {
+	ID           int64
+	EoNumber     pgtype.Text
+	Title        string
+	WhatChanged  string
+	WhoAffected  string
+	Actions      []byte
+	AudienceTags []string
+	RegionCode   pgtype.Text
+	Status       string
+	PassedAt     pgtype.Date
+	SignedAt     pgtype.Date
+	EffectiveAt  pgtype.Date
+	OfficialUrl  pgtype.Text
+	SourceUrl    pgtype.Text
+	ActNumber    pgtype.Text
+	Quotes       []byte
+}
+
+func (q *Queries) ListLawDrafts(ctx context.Context) ([]ListLawDraftsRow, error) {
+	rows, err := q.db.Query(ctx, listLawDrafts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListLawDraftsRow
+	for rows.Next() {
+		var i ListLawDraftsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EoNumber,
+			&i.Title,
+			&i.WhatChanged,
+			&i.WhoAffected,
+			&i.Actions,
+			&i.AudienceTags,
+			&i.RegionCode,
+			&i.Status,
+			&i.PassedAt,
+			&i.SignedAt,
+			&i.EffectiveAt,
+			&i.OfficialUrl,
+			&i.SourceUrl,
+			&i.ActNumber,
+			&i.Quotes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVerifiedLaws = `-- name: ListVerifiedLaws :many
 SELECT
     id, title, what_changed, who_affected, actions, audience_tags, region_code, status,
@@ -82,4 +256,61 @@ func (q *Queries) ListVerifiedLaws(ctx context.Context, arg ListVerifiedLawsPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const rejectLaw = `-- name: RejectLaw :exec
+UPDATE law_changes SET rejected = true, reject_reason = $2 WHERE id = $1 AND NOT verified
+`
+
+type RejectLawParams struct {
+	ID           int64
+	RejectReason pgtype.Text
+}
+
+func (q *Queries) RejectLaw(ctx context.Context, arg RejectLawParams) error {
+	_, err := q.db.Exec(ctx, rejectLaw, arg.ID, arg.RejectReason)
+	return err
+}
+
+const updateLawDraft = `-- name: UpdateLawDraft :exec
+UPDATE law_changes
+SET title = $2, what_changed = $3, who_affected = $4, actions = $5, audience_tags = $6,
+    region_code = $7, status = $8, effective_at = $9
+WHERE id = $1 AND NOT verified
+`
+
+type UpdateLawDraftParams struct {
+	ID           int64
+	Title        string
+	WhatChanged  string
+	WhoAffected  string
+	Actions      []byte
+	AudienceTags []string
+	RegionCode   pgtype.Text
+	Status       string
+	EffectiveAt  pgtype.Date
+}
+
+func (q *Queries) UpdateLawDraft(ctx context.Context, arg UpdateLawDraftParams) error {
+	_, err := q.db.Exec(ctx, updateLawDraft,
+		arg.ID,
+		arg.Title,
+		arg.WhatChanged,
+		arg.WhoAffected,
+		arg.Actions,
+		arg.AudienceTags,
+		arg.RegionCode,
+		arg.Status,
+		arg.EffectiveAt,
+	)
+	return err
+}
+
+const verifyLaw = `-- name: VerifyLaw :exec
+UPDATE law_changes SET verified = true, verified_at = now() WHERE id = $1 AND NOT rejected
+`
+
+func (q *Queries) VerifyLaw(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, verifyLaw, id)
+	return err
 }

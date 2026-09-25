@@ -1,0 +1,148 @@
+package gigachat
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+
+	"shtil/backend/internal/llm"
+)
+
+const lawFunctionName = "extract_law"
+
+const lawSystemPrompt = `Ты извлекаешь структуру из текста российского федерального закона для приложения-дайджеста. Ты ничего не пересказываешь от себя и не додумываешь.
+
+Правила:
+1. Используй только текст закона. Если чего-то в тексте нет, оставь поле пустым. Никаких предположений и оценок.
+2. relevant = true, только если закон заметно касается обычных граждан или индивидуальных предпринимателей: налоги, выплаты, права, штрафы, жильё, транспорт, работа, образование, здоровье, персональные данные, услуги. Ратификации, межгосударственные соглашения, внутренние процедуры органов власти, награды, бюджетные технические правки, узкоотраслевые нормы для организаций — false.
+3. title: нейтральный заголовок 6–14 слов о сути изменения, без «шок», «срочно», восклицаний и точки в конце. Не копируй название закона «О внесении изменений…», а назови, что именно меняется.
+4. what_changed: 1–3 коротких предложения, что именно меняется. Только факты из текста.
+5. who_affected: кого касается, одним предложением. Только то, что следует из текста.
+6. actions: до 3 действий, которые человек должен или может сделать, ТОЛЬКО если закон прямо их предписывает (подать, уведомить, зарегистрировать до срока). Иначе пустой список.
+7. audience_tags: только из разрешённого списка. "all", если касается всех граждан.
+8. effective_at: дата вступления в силу в формате YYYY-MM-DD, только если в тексте она указана календарной датой (например «вступает в силу с 1 марта 2027 года»). Если сказано «по истечении 10 дней после опубликования» или дата разная для разных статей, оставь пустую строку.
+9. quotes: для what_changed, who_affected и effective_at дай ДОСЛОВНУЮ цитату из текста (12–200 знаков), скопированную без изменений. Цитата для effective_at пустая, если effective_at пустой.`
+
+func lawFunction() chatFunction {
+	str := func(desc string) map[string]any { return map[string]any{"type": "string", "description": desc} }
+	tags := map[string]any{"type": "array", "items": map[string]any{"type": "string", "enum": llm.AudienceTags}}
+	return chatFunction{
+		Name:        lawFunctionName,
+		Description: "Записать структуру закона с цитатами из текста",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"relevant":      map[string]any{"type": "boolean", "description": "касается граждан или ИП"},
+				"title":         str("нейтральный заголовок 6–14 слов"),
+				"what_changed":  str("что меняется, 1–3 предложения"),
+				"who_affected":  str("кого касается, одно предложение"),
+				"actions":       map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "до 3 действий, только если прямо предписаны"},
+				"audience_tags": tags,
+				"effective_at":  str("YYYY-MM-DD или пустая строка"),
+				"quotes": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"what_changed": str("дословная цитата"),
+						"who_affected": str("дословная цитата"),
+						"effective_at": str("дословная цитата или пустая строка"),
+					},
+					"required": []string{"what_changed", "who_affected"},
+				},
+			},
+			"required": []string{"relevant"},
+		},
+	}
+}
+
+// ExtractLaw извлекает структуру закона. Ответ проверяется по тексту (цитаты должны в нём находиться);
+// при несоответствии запрос повторяется, но ответ не «чинится».
+func (c *Client) ExtractLaw(ctx context.Context, in llm.LawInput) (llm.LawDraft, llm.Usage, error) {
+	if strings.TrimSpace(in.Text) == "" {
+		return llm.LawDraft{}, llm.Usage{}, errors.New("нет текста закона")
+	}
+	user := fmt.Sprintf("Закон: %s (%s)\n\nТекст:\n%s", in.Title, in.Number, llm.ExcerptForModel(in.Text, 7000, 4000))
+	reqBody, err := json.Marshal(chatRequest{
+		Model: c.cfg.Model,
+		Messages: []chatMessage{
+			{Role: "system", Content: lawSystemPrompt},
+			{Role: "user", Content: user},
+		},
+		Functions:    []chatFunction{lawFunction()},
+		FunctionCall: map[string]any{"name": lawFunctionName},
+		Temperature:  0.1,
+		MaxTokens:    900,
+	})
+	if err != nil {
+		return llm.LawDraft{}, llm.Usage{}, err
+	}
+	var total llm.Usage
+	var lastErr error
+	for attempt := 1; attempt <= c.cfg.MaxAttempts; attempt++ {
+		resp, err := c.chat(ctx, reqBody)
+		if err != nil {
+			return llm.LawDraft{}, total, err
+		}
+		total.PromptTokens += resp.Usage.PromptTokens
+		total.CompletionTokens += resp.Usage.CompletionTokens
+
+		d, err := parseLaw(resp)
+		if err == nil {
+			if err = d.Validate(in.Text); err == nil {
+				return d, total, nil
+			}
+		}
+		lastErr = err
+		c.cfg.Log.Warn("модель вернула некорректный разбор закона", "attempt", attempt, "err", err)
+	}
+	return llm.LawDraft{}, total, fmt.Errorf("%w: %v", llm.ErrInvalid, lastErr)
+}
+
+func parseLaw(resp chatResponse) (llm.LawDraft, error) {
+	if len(resp.Choices) == 0 {
+		return llm.LawDraft{}, errors.New("пустой список choices")
+	}
+	fc := resp.Choices[0].Message.FunctionCall
+	if fc == nil || fc.Name != lawFunctionName {
+		return llm.LawDraft{}, errors.New("модель не вызвала функцию")
+	}
+	args := fc.Arguments
+	var asString string
+	if json.Unmarshal(args, &asString) == nil {
+		args = json.RawMessage(asString)
+	}
+	var raw struct {
+		Relevant     *bool    `json:"relevant"`
+		Title        string   `json:"title"`
+		WhatChanged  string   `json:"what_changed"`
+		WhoAffected  string   `json:"who_affected"`
+		Actions      []string `json:"actions"`
+		AudienceTags []string `json:"audience_tags"`
+		EffectiveAt  string   `json:"effective_at"`
+		Quotes       struct {
+			WhatChanged string `json:"what_changed"`
+			WhoAffected string `json:"who_affected"`
+			EffectiveAt string `json:"effective_at"`
+		} `json:"quotes"`
+	}
+	if err := json.NewDecoder(bytes.NewReader(args)).Decode(&raw); err != nil {
+		return llm.LawDraft{}, fmt.Errorf("аргументы функции не JSON: %w", err)
+	}
+	if raw.Relevant == nil {
+		return llm.LawDraft{}, errors.New("нет поля relevant")
+	}
+	trim := strings.TrimSpace
+	d := llm.LawDraft{
+		Relevant: *raw.Relevant, Title: trim(raw.Title), WhatChanged: trim(raw.WhatChanged), WhoAffected: trim(raw.WhoAffected),
+		AudienceTags: raw.AudienceTags, EffectiveAt: trim(raw.EffectiveAt),
+		Quotes: llm.Quotes{WhatChanged: trim(raw.Quotes.WhatChanged), WhoAffected: trim(raw.Quotes.WhoAffected), EffectiveDay: trim(raw.Quotes.EffectiveAt)},
+	}
+	for _, a := range raw.Actions {
+		if a = trim(a); a != "" {
+			d.Actions = append(d.Actions, a)
+		}
+	}
+	return d, nil
+}

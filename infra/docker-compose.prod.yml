@@ -97,6 +97,24 @@ services:
     mem_limit: 96m
     tmpfs: [/tmp]
 
+  # Юридический конвейер, только вручную: docker compose run --rm lawtool fetch | docker compose run --rm lawtool review
+  # (review интерактивный: запускать через ssh -t). Профиль tools не даёт поднять сервис вместе со стеком.
+  lawtool:
+    <<: *hardened
+    restart: "no"
+    profiles: [tools]
+    image: shtil/lawtool:${SHTIL_VERSION:-dev}
+    stdin_open: true
+    tty: true
+    environment:
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+      GIGACHAT_AUTH_KEY: ${GIGACHAT_AUTH_KEY:-}
+      GIGACHAT_MODEL: ${GIGACHAT_MODEL:-GigaChat-2}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    mem_limit: 96m
+    tmpfs: [/tmp]
+
   # Разовые команды: docker compose run --rm sync-sources
   sync-sources:
     <<: *hardened
