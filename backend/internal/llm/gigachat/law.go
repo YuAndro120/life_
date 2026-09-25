@@ -150,8 +150,9 @@ func parseLaw(resp chatResponse, sent []llm.Fragment) (llm.LawDraft, error) {
 	if d.Relevant && (d.Quotes.WhatChanged == "" || d.Quotes.WhoAffected == "") {
 		return llm.LawDraft{}, errors.New("указан несуществующий номер фрагмента")
 	}
-	if d.EffectiveAt != "" && d.Quotes.EffectiveDay == "" {
-		return llm.LawDraft{}, errors.New("дата вступления без фрагмента")
+	if d.Quotes.EffectiveDay == "" {
+		// Дата без подтверждающего фрагмента не принимается (модель иногда пишет «0000-00-00» вместо пустой строки).
+		d.EffectiveAt = ""
 	}
 	for _, a := range raw.Actions {
 		if a = trim(a); a != "" {
