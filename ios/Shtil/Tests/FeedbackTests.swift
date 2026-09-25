@@ -71,4 +71,13 @@ import Testing
         #expect(FeedbackAction.boostTopic(.space).message == "Больше про: Космос")
         #expect(FeedbackAction.muteSource("BBC").message.contains("BBC"))
     }
+
+    @Test func storyLookupFindsStoryForDetailScreen() async throws {
+        let (m, c) = try model()
+        defer { withExtendedLifetime(c) {} }
+        await m.refresh()
+        let story = try #require(m.story(id: "st_10"))
+        #expect(!story.summary.isEmpty)
+        #expect(m.story(id: "нет такого") == nil)
+    }
 }

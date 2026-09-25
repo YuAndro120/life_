@@ -108,6 +108,8 @@ final class AppModel {
 
     func law(id: String) -> Law? { laws.first { $0.id == id } }
 
+    func story(id: String) -> Story? { feed?.stories.first { $0.id == id } }
+
     // MARK: загрузка
 
     func refresh() async {

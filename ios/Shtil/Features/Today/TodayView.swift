@@ -405,18 +405,27 @@ struct StoryRow: View {
                 Text("\(story.postCount) → 1").metaStyle()
                 StoryMenu(story: story, interests: interests, onFeedback: onFeedback)
             }
-            Text(story.title)
-                .font(theme.fonts.heading(theme.id == .sage ? 22 : 21, .semibold))
-                .tracking(theme.id == .sage ? 0 : -0.5)
-                .foregroundStyle(theme.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            if let meaning = story.meaning, !meaning.isEmpty {
-                (Text(theme.id == .sage ? "Значит, " : "Значит: ").fontWeight(.medium).foregroundColor(theme.ink)
-                    + Text(theme.id == .sage ? meaning.lowercasedFirst : meaning))
-                    .font(theme.fonts.body(15)).lineSpacing(3)
-                    .foregroundStyle(theme.body)
-                    .fixedSize(horizontal: false, vertical: true)
+            NavigationLink(value: StoryRoute(id: story.id)) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(story.title)
+                        .font(theme.fonts.heading(theme.id == .sage ? 22 : 21, .semibold))
+                        .tracking(theme.id == .sage ? 0 : -0.5)
+                        .foregroundStyle(theme.ink)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let meaning = story.meaning, !meaning.isEmpty {
+                        (Text(theme.id == .sage ? "Значит, " : "Значит: ").fontWeight(.medium).foregroundColor(theme.ink)
+                            + Text(theme.id == .sage ? meaning.lowercasedFirst : meaning))
+                            .font(theme.fonts.body(15)).lineSpacing(3)
+                            .foregroundStyle(theme.body)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             if !story.sources.isEmpty {
                 HStack(spacing: 12) {
                     ForEach(story.sources.prefix(3), id: \.url) { source in

@@ -30,7 +30,12 @@ struct MainTabs: View {
     @Environment(\.theme) private var theme
     @Environment(AppModel.self) private var model
     @State private var tab: AppTab = DebugLaunch.tab.flatMap(AppTab.init(rawValue:)) ?? .today
-    @State private var path: [LawRoute] = DebugLaunch.lawId.map { [LawRoute(id: $0)] } ?? []
+    @State private var path: NavigationPath = {
+        var p = NavigationPath()
+        if let id = DebugLaunch.lawId { p.append(LawRoute(id: id)) }
+        if let id = DebugLaunch.storyId { p.append(StoryRoute(id: id)) }
+        return p
+    }()
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -44,6 +49,13 @@ struct MainTabs: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) { ShtilTabBar(selection: $tab) }
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: StoryRoute.self) { route in
+                if let story = model.story(id: route.id) {
+                    StoryDetailView(story: story)
+                } else {
+                    Text("Сюжет не найден").foregroundStyle(theme.muted)
+                }
+            }
             .navigationDestination(for: LawRoute.self) { route in
                 if let law = model.law(id: route.id) {
                     LawDetailView(law: law)
