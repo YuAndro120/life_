@@ -80,9 +80,9 @@ sut/
 ├── plan.md                   # этот файл
 ├── design/                   # копии макетов .dc.html
 ├── ios/
-│   └── Sut/
-│       ├── Sut.xcodeproj
-│       ├── App/              # SutApp.swift, корневая навигация, DI
+│   └── Life/
+│       ├── Life.xcodeproj
+│       ├── App/              # LifeApp.swift, корневая навигация, DI
 │       ├── Core/
 │       │   ├── Theme/        # токены трёх тем, шрифты, модификаторы
 │       │   ├── Networking/   # APIClient (URLSession), модели DTO, pinning
@@ -332,7 +332,7 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 
 **Установка на iPhone без App Store:**
 1. Xcode → Settings → Accounts → добавить Apple ID (Personal Team).
-2. Target → Signing & Capabilities → Team = Personal Team, уникальный Bundle ID (например `ru.andronov.sut`).
+2. Target → Signing & Capabilities → Team = Personal Team, уникальный Bundle ID (например `ru.andronov.life`).
 3. На iPhone: Настройки → Конфиденциальность и безопасность → Режим разработчика → вкл., перезагрузка.
 4. Подключить iPhone кабелем (потом можно по Wi-Fi: Window → Devices and Simulators → Connect via network), выбрать устройство и нажать Run.
 5. На iPhone: Настройки → Основные → VPN и управление устройством → доверять разработчику.
@@ -341,9 +341,9 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 ## 14. Фазы и чек-листы
 
 ### Фаза 0 — Каркас (0.5 дня)
-- [ ] Монорепо по структуре из раздела 5, git, `.gitignore`, `CLAUDE.md`.
-- [ ] Xcode-проект SwiftUI, iOS 17, Swift 6 strict concurrency, запускается на iPhone.
-- [ ] Go-модуль, `cmd/api` с `/v1/health`, docker-compose с Postgres + pgvector.
+- [x] Монорепо по структуре из раздела 5, git, `.gitignore`, `CLAUDE.md`.
+- [x] Xcode-проект SwiftUI, iOS 17, Swift 6 strict concurrency (собирается и тестируется на симуляторе; запуск на iPhone проверить вручную).
+- [x] Go-модуль, `cmd/api` с `/v1/health`, docker-compose с Postgres + pgvector (compose написан, `docker compose up` не проверен).
 
 ### Фаза 1 — iOS на моках (3–5 дней) — результат: приложение на телефоне выглядит как макет
 - [ ] Theme: токены трёх тем, шрифты, `@Environment(\.theme)`, авто-Сумерки после 19:00.

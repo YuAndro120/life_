@@ -32,5 +32,5 @@ cd backend && go run ./cmd/api
 go test ./...
 
 # iOS
-xcodebuild -project ios/Sut/Sut.xcodeproj -scheme Sut -destination 'platform=iOS Simulator,name=iPhone 16' build test
+xcodebuild -project ios/Life/Life.xcodeproj -scheme Life -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build test
 ```
