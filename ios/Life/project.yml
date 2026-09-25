@@ -64,6 +64,12 @@ schemes:
     build:
       targets:
         Life: all
+    run:
+      commandLineArguments:
+        # Встроенные данные, без сервера. Чтобы ходить на настоящий сервер: снять галочку здесь
+        # (Product → Scheme → Edit Scheme → Run → Arguments) и включить -lifeAPI с адресом Mac.
+        "-lifeSource fixtures": true
+        "-lifeAPI http://192.168.1.130:8080": false
     test:
       targets:
         - LifeTests
