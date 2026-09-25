@@ -111,7 +111,7 @@ func run(path string) error {
 	for _, s := range seed.Sources {
 		var id int64
 		err := tx.QueryRow(ctx,
-			`INSERT INTO sources (kind, handle, url, title, topic_hint) VALUES ($1, $2, $3, $4, NULLIF($5, '')) RETURNING id`,
+			`INSERT INTO sources (kind, handle, url, title, topic_hint, legal_checked_at) VALUES ($1, $2, $3, $4, NULLIF($5, ''), CURRENT_DATE) RETURNING id`,
 			s.Kind, s.Handle, s.URL, s.Title, s.TopicHint).Scan(&id)
 		if err != nil {
 			return fmt.Errorf("source %s: %w", s.Handle, err)

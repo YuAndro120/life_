@@ -9,6 +9,9 @@ make migrate        # goose up
 make seed           # тестовые данные (даты относительно «сейчас»); очищает таблицы данных
 make run            # API на :8080
 make test-integration   # тесты на живой БД (мигрирует и засевает)
+make sync-sources   # каталог seeds/sources.yaml -> БД (включаются только проверенные по реестрам)
+make collect        # один проход сборщика по источникам
+make collect-loop   # сборщик в цикле
 ```
 
 `DATABASE_URL` по умолчанию `postgres://life:life_dev@127.0.0.1:5432/life?sslmode=disable` (см. `backend/Makefile`).

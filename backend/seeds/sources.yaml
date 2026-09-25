@@ -1,0 +1,41 @@
+# Каталог источников «Life». Правила (см. plan.md, раздел 16):
+#   * Источники из реестров нежелательных организаций и иноагентов в каталог НЕ входят.
+#   * Пока нет даты `legal_checked` (проверка по реестрам), источник не включится, даже при active: true.
+#     Это же ограничение продублировано в БД (CHECK sources_active_requires_legal_check).
+#   * Проверять перед добавлением и периодически после; дату обновлять при каждой проверке.
+#
+# Формат: kind = rss | gov | tg | site (site пока не поддерживается сборщиком).
+#         Для tg достаточно handle, адрес превью t.me/s/<handle> подставится сам.
+sources:
+  # --- Государственные органы: официальные сайты ---
+  - kind: gov
+    handle: cbr
+    url: https://www.cbr.ru/rss/RssNews
+    title: Банк России
+    topic_hint: economy
+    active: true
+    legal_checked: 2026-09-25
+    note: Официальный сайт государственного органа, в реестрах быть не может.
+  - kind: gov
+    handle: government
+    url: http://government.ru/all/rss/
+    title: Правительство России
+    topic_hint: law
+    active: true
+    legal_checked: 2026-09-25
+    note: Официальный сайт государственного органа, в реестрах быть не может.
+
+  # --- СМИ: адреса лент проверены (отвечают, отдают записи), а вот проверка по реестрам за владельцем ---
+  - {kind: rss, handle: tass, url: "https://tass.ru/rss/v2.xml", title: ТАСС, active: true}
+  - {kind: rss, handle: ria, url: "https://ria.ru/export/rss2/archive/index.xml", title: РИА Новости, active: true}
+  - {kind: rss, handle: interfax, url: "https://www.interfax.ru/rss.asp", title: Интерфакс, active: true}
+  - {kind: rss, handle: kommersant, url: "https://www.kommersant.ru/RSS/news.xml", title: Коммерсантъ, topic_hint: economy, active: true, note: "лента большая (около 500 записей); при частых запросах сайт переставал отвечать"}
+  - {kind: rss, handle: rbc, url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss", title: РБК, topic_hint: economy, active: true}
+  - {kind: rss, handle: vedomosti, url: "https://www.vedomosti.ru/rss/news", title: Ведомости, topic_hint: economy, active: true}
+  - {kind: rss, handle: lenta, url: "https://lenta.ru/rss/news", title: Lenta.ru, active: true}
+  - {kind: rss, handle: habr_news, url: "https://habr.com/ru/rss/news/", title: Хабр — новости, topic_hint: tech_ai, active: true}
+  - {kind: rss, handle: vc, url: "https://vc.ru/rss/all", title: vc.ru, topic_hint: tech_ai, active: true}
+
+  # --- Публичные Telegram-каналы (веб-превью t.me/s/…): добавить после проверки по реестрам ---
+  - {kind: tg, handle: NeuralProfit, title: NeuralProfit, topic_hint: tech_ai, active: true, note: "из плана; проверить статус канала и автора"}
+  - {kind: tg, handle: simply_formula, title: Simply Formula, topic_hint: finance, active: true, note: "из плана; проверить статус канала и автора"}

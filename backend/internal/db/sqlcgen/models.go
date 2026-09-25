@@ -41,18 +41,23 @@ type Post struct {
 	Embedding   string
 	StoryID     pgtype.Int8
 	CreatedAt   pgtype.Timestamptz
+	AdSuspected bool
 }
 
 type Source struct {
-	ID          int64
-	Kind        string
-	Handle      string
-	Url         string
-	Title       string
-	TopicHint   pgtype.Text
-	LegalStatus string
-	Active      bool
-	CreatedAt   pgtype.Timestamptz
+	ID                  int64
+	Kind                string
+	Handle              string
+	Url                 string
+	Title               string
+	TopicHint           pgtype.Text
+	LegalStatus         string
+	Active              bool
+	CreatedAt           pgtype.Timestamptz
+	LegalCheckedAt      pgtype.Date
+	LastFetchedAt       pgtype.Timestamptz
+	LastError           pgtype.Text
+	ConsecutiveFailures int32
 }
 
 type Story struct {

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+  <channel>
+    <title>Новое на сайте</title>
+    <item>
+      <title>Решения Банка России в отношении участников финансового рынка</title>
+      <link>https://www.cbr.ru/rbr/rbr_fr/</link>
+      <guid isPermaLink="false">ID_9973</guid>
+      <description />
+      <pubDate>Fri, 25 Sep 2026 12:41:53 +0300</pubDate>
+    </item>
+    <item>
+      <title>Отдельные показатели финансового результата по ОСАГО</title>
+      <link>https://www.cbr.ru/statistics/insurance/#a_193595file</link>
+      <guid isPermaLink="false">ID_10140</guid>
+      <description />
+      <pubDate>Fri, 25 Sep 2026 11:00:00 +0300</pubDate>
+      <category>Базы данных</category>
+    </item>
+  </channel>
+</rss>

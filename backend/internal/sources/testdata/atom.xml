@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Блог</title>
+  <entry>
+    <id>tag:example.org,2026:1</id>
+    <title>Вышла новая версия</title>
+    <link rel="alternate" href="https://example.org/1"/>
+    <link rel="replies" href="https://example.org/1/comments"/>
+    <updated>2026-09-25T09:00:00Z</updated>
+    <summary type="html">&lt;p&gt;Список изменений: &lt;b&gt;быстрее&lt;/b&gt; и &amp;amp; стабильнее.&lt;/p&gt;</summary>
+  </entry>
+  <entry>
+    <title>Без идентификатора</title>
+    <link href="https://example.org/2"/>
+    <published>2026-09-24T18:30:00+03:00</published>
+    <content>Только контент</content>
+  </entry>
+</feed>
