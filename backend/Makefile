@@ -12,7 +12,7 @@ migrate-down:
 	goose -dir $(MIGRATIONS) postgres "$(DATABASE_URL)" down
 
 seed:
-	go run ./cmd/seed -yes
+	ALLOW_SEED=1 go run ./cmd/seed -yes
 
 run:
 	go run ./cmd/api
