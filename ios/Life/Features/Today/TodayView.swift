@@ -49,14 +49,16 @@ struct TodayView: View {
     // MARK: шапка
 
     @ViewBuilder private func header(_ e: Edition) -> some View {
-        if model.isOffline { offlineBanner }
+        if model.isOffline || model.isDemoData { offlineBanner }
         if theme.id == .sage { sageHeader(e) } else { paperHeader(e) }
     }
 
     private var offlineBanner: some View {
         HStack(spacing: 8) {
             Image(systemName: "wifi.slash").font(.system(size: 12, weight: .medium))
-            Text(model.lastSyncedAt.map { "Нет связи · выпуск от \(RuFormat.editionStamp(date: $0))" } ?? "Нет связи")
+            Text(model.isDemoData
+                 ? "Тестовые данные · сервер недоступен"
+                 : (model.lastSyncedAt.map { "Нет связи · выпуск от \(RuFormat.editionStamp(date: $0))" } ?? "Нет связи"))
                 .font(theme.id == .sage ? theme.fonts.body(13) : ThemeFonts.mono(11))
                 .tracking(theme.id == .sage ? 0 : 0.44)
                 .textCase(theme.id == .sage ? nil : .uppercase)

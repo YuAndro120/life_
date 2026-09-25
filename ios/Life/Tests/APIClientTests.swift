@@ -215,6 +215,31 @@ struct FailingSource: ContentSource {
         #expect(!model.isOffline)
     }
 
+    @Test func firstLaunchWithoutNetworkUsesFallbackButDoesNotCacheIt() async throws {
+        let container = try container()
+        let model = AppModel(context: container.mainContext, source: FailingSource(), fallback: FixtureContentSource())
+        await model.refresh()
+        #expect(model.edition != nil)
+        #expect(model.isDemoData)
+        #expect(model.loadError == nil)
+        #expect(ContentCache(context: container.mainContext).load() == nil, "демо-данные не должны попасть в кэш")
+
+        // Сервер появился: демо-режим выключается.
+        let live = AppModel(context: container.mainContext, source: FixtureContentSource(), fallback: FixtureContentSource())
+        await live.refresh()
+        #expect(!live.isDemoData)
+    }
+
+    @Test func fallbackIsNotUsedWhenCacheExists() async throws {
+        let container = try container()
+        let seeded = AppModel(context: container.mainContext, source: FixtureContentSource())
+        await seeded.refresh()
+        let model = AppModel(context: container.mainContext, source: FailingSource(), fallback: FixtureContentSource())
+        await model.refresh()
+        #expect(model.isOffline)
+        #expect(!model.isDemoData)
+    }
+
     @Test func successfulRefreshClearsOfflineFlag() async throws {
         let container = try container()
         let context = container.mainContext

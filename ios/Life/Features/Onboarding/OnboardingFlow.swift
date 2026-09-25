@@ -283,9 +283,31 @@ private struct OnbBuilding: View {
     var body: some View {
         if let edition = model.edition, let feed = model.feed {
             content(BuildingPlan.make(edition: edition, feed: feed))
+        } else if let error = model.loadError {
+            failure(error)
         } else {
             VStack { ProgressView() }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    /// Нет данных, чтобы собрать первый выпуск: не крутим индикатор вечно, а даём выход.
+    private func failure(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Spacer()
+            Text(message).font(theme.fonts.heading(28, .semibold)).foregroundStyle(theme.ink)
+            Text("Проверь соединение с интернетом. Профиль и настройки сохранены, выпуск можно собрать позже.")
+                .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted)
+            Spacer()
+            PrimaryButton(title: "Повторить", trailing: "↻") { Task { await model.refresh() } }
+            Button {
+                Task { await model.completeOnboarding() }
+            } label: {
+                Text("Продолжить без выпуска").font(theme.fonts.body(15, .medium)).foregroundStyle(theme.muted)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20).padding(.bottom, 16)
     }
 
     private func content(_ plan: BuildingPlan) -> some View {

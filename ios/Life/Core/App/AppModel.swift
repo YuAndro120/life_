@@ -10,6 +10,8 @@ final class AppModel {
     let settings: FilterSettings
     let counter: EditionCounter
     private let source: any ContentSource
+    /// Запасной источник для первого запуска без сети и без кэша (в DEBUG — встроенные тестовые данные).
+    private let fallback: (any ContentSource)?
     private let notifier: any NotificationScheduling
 
     private(set) var feed: Feed?
@@ -18,6 +20,8 @@ final class AppModel {
     private(set) var loadError: String?
     /// Данные взяты из кэша, потому что сервер недоступен.
     private(set) var isOffline = false
+    /// Показаны встроенные тестовые данные, потому что сервер недоступен, а кэша ещё нет.
+    private(set) var isDemoData = false
     /// Когда данные последний раз получены с сервера (или из кэша при офлайне).
     private(set) var lastSyncedAt: Date?
     private let cache: ContentCache
@@ -27,11 +31,13 @@ final class AppModel {
     init(
         context: ModelContext,
         source: any ContentSource = FixtureContentSource(),
+        fallback: (any ContentSource)? = nil,
         notifier: any NotificationScheduling = NoopNotificationScheduler(),
         now: Date = .now
     ) {
         self.context = context
         self.source = source
+        self.fallback = fallback
         self.notifier = notifier
         self.now = now
         self.profile = Self.fetchOrCreate(Profile.self, in: context) { Profile() }
@@ -111,11 +117,20 @@ final class AppModel {
             laws = newLaws
             loadError = nil
             isOffline = false
+            isDemoData = false
             lastSyncedAt = Date.now
             cache.save(feed: newFeed, laws: newLaws, fetchedAt: lastSyncedAt ?? .now)
         } catch {
             if feed == nil {
-                loadError = "Не удалось загрузить выпуск"
+                if let fallback, let demoFeed = try? await fallback.feed(), let demoLaws = try? await fallback.laws() {
+                    // В кэш не пишем: иначе демо-данные потом выдавались бы за настоящие.
+                    feed = demoFeed
+                    laws = demoLaws
+                    isDemoData = true
+                    loadError = nil
+                } else {
+                    loadError = "Не удалось загрузить выпуск"
+                }
             } else {
                 isOffline = true
             }
