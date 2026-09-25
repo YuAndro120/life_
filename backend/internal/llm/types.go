@@ -48,6 +48,9 @@ type Client interface {
 	Digest(ctx context.Context, in StoryInput) (Digest, Usage, error)
 }
 
+// ErrRateLimited — модель отвечает 429 (слишком частые запросы); вызывающий может подождать и повторить.
+var ErrRateLimited = errors.New("модель ограничила частоту запросов")
+
 // ErrInvalid — модель не дала корректный ответ после всех попыток. Ответ не «чинится» догадками.
 var ErrInvalid = errors.New("модель вернула некорректный ответ")
 

@@ -394,7 +394,9 @@ func (c *Client) chat(ctx context.Context, body []byte) (chatResponse, error) {
 				return chatResponse{}, err
 			}
 			lastErr = errors.New("gigachat chat: HTTP 401, токен обновлён")
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
+		case resp.StatusCode == http.StatusTooManyRequests:
+			lastErr = fmt.Errorf("gigachat chat: HTTP 429: %w", llm.ErrRateLimited)
+		case resp.StatusCode >= 500:
 			lastErr = fmt.Errorf("gigachat chat: HTTP %d", resp.StatusCode)
 		case resp.StatusCode == http.StatusPaymentRequired:
 			return chatResponse{}, errors.New("gigachat chat: HTTP 402, исчерпан лимит токенов тарифа")

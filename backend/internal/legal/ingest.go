@@ -36,6 +36,9 @@ type Ingester struct {
 	Store     Store
 	Log       *slog.Logger
 	Now       func() time.Time
+	// Sleep подменяется в тестах; RateLimitWait — пауза после 429 от модели (воркер делит с нами лимит запросов).
+	Sleep         func(time.Duration)
+	RateLimitWait time.Duration
 }
 
 type Report struct {
@@ -79,7 +82,7 @@ func (g *Ingester) Run(ctx context.Context, from time.Time, limit int) (Report, 
 		}
 		processed++
 		if err := g.one(ctx, d, &rep); err != nil {
-			if errors.Is(err, llm.ErrInvalid) || errors.Is(err, ErrNoText) {
+			if errors.Is(err, llm.ErrInvalid) || errors.Is(err, ErrNoText) || errors.Is(err, llm.ErrRateLimited) {
 				g.Log.Warn("закон пропущен", "номер", d.Number, "err", err)
 				rep.Failed++
 				continue // без записи: повторим при следующем запуске
@@ -95,9 +98,22 @@ func (g *Ingester) one(ctx context.Context, d Doc, rep *Report) error {
 	if err != nil {
 		return err
 	}
-	ex, usage, err := g.Extractor.ExtractLaw(ctx, llm.LawInput{Title: d.Title, Number: d.Number, Text: text})
-	rep.PromptTokens += usage.PromptTokens
-	rep.CompletionTokens += usage.CompletionTokens
+	var ex llm.LawDraft
+	for try := 0; ; try++ {
+		var usage llm.Usage
+		ex, usage, err = g.Extractor.ExtractLaw(ctx, llm.LawInput{Title: d.Title, Number: d.Number, Text: text})
+		rep.PromptTokens += usage.PromptTokens
+		rep.CompletionTokens += usage.CompletionTokens
+		if !errors.Is(err, llm.ErrRateLimited) || try == 4 {
+			break
+		}
+		g.Log.Warn("модель просит подождать", "пауза", g.RateLimitWait)
+		if g.Sleep != nil {
+			g.Sleep(g.RateLimitWait)
+		} else {
+			time.Sleep(g.RateLimitWait)
+		}
+	}
 	if err != nil {
 		return err
 	}

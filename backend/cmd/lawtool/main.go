@@ -93,7 +93,7 @@ func fetch(ctx context.Context, store *legal.PGStore, since string, limit int) e
 	}
 	g := &legal.Ingester{
 		Pravo: legal.NewPravo(), Kremlin: legal.NewKremlin(), Extractor: model,
-		Store: store, Log: slog.Default(), Now: time.Now,
+		Store: store, Log: slog.Default(), Now: time.Now, RateLimitWait: 20 * time.Second,
 	}
 	rep, err := g.Run(ctx, from, limit)
 	fmt.Printf("в списке: %d, уже видели: %d, черновиков: %d, отклонено: %d, ошибок: %d, токенов: %d+%d\n",
