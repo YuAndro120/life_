@@ -2,15 +2,15 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: life
-      POSTGRES_PASSWORD: life_dev
-      POSTGRES_DB: life
+      POSTGRES_USER: shtil
+      POSTGRES_PASSWORD: shtil_dev
+      POSTGRES_DB: shtil
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U life"]
+      test: ["CMD-SHELL", "pg_isready -U shtil"]
       interval: 5s
       retries: 10
 

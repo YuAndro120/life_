@@ -12,9 +12,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"life/backend/internal/config"
-	"life/backend/internal/httpapi"
-	"life/backend/internal/store"
+	"shtil/backend/internal/config"
+	"shtil/backend/internal/httpapi"
+	"shtil/backend/internal/store"
 )
 
 func main() {

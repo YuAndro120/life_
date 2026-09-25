@@ -7,21 +7,21 @@ import (
 	"testing"
 	"time"
 
-	"life/backend/internal/sources"
+	"shtil/backend/internal/sources"
 )
 
-// Живая проверка лент каталога: LIFE_LIVE_TESTS=1 go test ./internal/catalog -run Live -v
+// Живая проверка лент каталога: SHTIL_LIVE_TESTS=1 go test ./internal/catalog -run Live -v
 // Только читает публичные RSS (по одному запросу на источник), ничего не сохраняет.
 // Ловит смену формата или адреса ленты на стороне сайта.
 func TestLiveFeedsParse(t *testing.T) {
-	if os.Getenv("LIFE_LIVE_TESTS") == "" {
-		t.Skip("LIFE_LIVE_TESTS не задан")
+	if os.Getenv("SHTIL_LIVE_TESTS") == "" {
+		t.Skip("SHTIL_LIVE_TESTS не задан")
 	}
 	entries, err := Load("../../seeds/sources.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fetcher := sources.NewHTTPFetcher("LifeBot/0.1 (catalog check)")
+	fetcher := sources.NewHTTPFetcher("ShtilBot/0.1 (catalog check)")
 	for _, e := range entries {
 		if e.Kind != "rss" && e.Kind != "gov" {
 			continue

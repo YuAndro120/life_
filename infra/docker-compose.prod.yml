@@ -1,7 +1,7 @@
-# Продакшн-стек Life на общем сервере (проект `life`, свои сеть и тома).
+# Продакшн-стек Штиль на общем сервере (проект `shtil`, свои сеть и тома).
 # Образы собираются на Mac и загружаются на сервер (docker load), сервер ничего не собирает и не скачивает.
 # Наружу ничего не опубликовано, кроме API на 127.0.0.1:8081 — дальше его проксирует nginx.
-name: life
+name: shtil
 
 x-hardened: &hardened
   restart: unless-stopped
@@ -19,8 +19,8 @@ services:
     cap_drop: [ALL]
     cap_add: [CHOWN, SETUID, SETGID, FOWNER, DAC_OVERRIDE]
     environment:
-      POSTGRES_USER: life
-      POSTGRES_DB: life
+      POSTGRES_USER: shtil
+      POSTGRES_DB: shtil
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
     command:
       - postgres
@@ -39,7 +39,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U life -d life"]
+      test: ["CMD-SHELL", "pg_isready -U shtil -d shtil"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -49,18 +49,18 @@ services:
   migrate:
     <<: *hardened
     restart: "no"
-    image: life/migrate:${LIFE_VERSION:-dev}
+    image: shtil/migrate:${SHTIL_VERSION:-dev}
     environment:
-      GOOSE_DBSTRING: postgres://life:${POSTGRES_PASSWORD}@postgres:5432/life?sslmode=disable
+      GOOSE_DBSTRING: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
     depends_on:
       postgres: {condition: service_healthy}
     mem_limit: 64m
 
   api:
     <<: *hardened
-    image: life/api:${LIFE_VERSION:-dev}
+    image: shtil/api:${SHTIL_VERSION:-dev}
     environment:
-      DATABASE_URL: postgres://life:${POSTGRES_PASSWORD}@postgres:5432/life?sslmode=disable
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
       API_ADDR: ":8080"
     ports:
       - "127.0.0.1:8081:8080"
@@ -71,11 +71,11 @@ services:
 
   collector:
     <<: *hardened
-    image: life/collector:${LIFE_VERSION:-dev}
+    image: shtil/collector:${SHTIL_VERSION:-dev}
     command: ["run"]
     environment:
-      DATABASE_URL: postgres://life:${POSTGRES_PASSWORD}@postgres:5432/life?sslmode=disable
-      COLLECTOR_USER_AGENT: "LifeBot/0.1 (personal news digest)"
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
+      COLLECTOR_USER_AGENT: "ShtilBot/0.1 (personal news digest)"
     depends_on:
       migrate: {condition: service_completed_successfully}
     mem_limit: 96m
@@ -85,10 +85,10 @@ services:
   sync-sources:
     <<: *hardened
     restart: "no"
-    image: life/collector:${LIFE_VERSION:-dev}
+    image: shtil/collector:${SHTIL_VERSION:-dev}
     command: ["sync"]
     environment:
-      DATABASE_URL: postgres://life:${POSTGRES_PASSWORD}@postgres:5432/life?sslmode=disable
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
     depends_on:
       migrate: {condition: service_completed_successfully}
     profiles: [tools]
@@ -97,10 +97,10 @@ services:
   seed:
     <<: *hardened
     restart: "no"
-    image: life/seed:${LIFE_VERSION:-dev}
+    image: shtil/seed:${SHTIL_VERSION:-dev}
     command: ["-yes"]
     environment:
-      DATABASE_URL: postgres://life:${POSTGRES_PASSWORD}@postgres:5432/life?sslmode=disable
+      DATABASE_URL: postgres://shtil:${POSTGRES_PASSWORD}@postgres:5432/shtil?sslmode=disable
       ALLOW_SEED: "1"
     depends_on:
       migrate: {condition: service_completed_successfully}

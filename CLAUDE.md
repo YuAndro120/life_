@@ -1,4 +1,4 @@
-# CLAUDE.md — правила проекта «Суть»
+# CLAUDE.md — правила проекта «Штиль»
 
 Полный план и все решения описаны в `plan.md`. Прочитай его перед началом работы и двигайся по фазам из раздела 14, отмечая чек-листы.
 
@@ -32,7 +32,7 @@ cd backend && go run ./cmd/api
 go test ./...
 
 # iOS
-xcodebuild -project ios/Life/Life.xcodeproj -scheme Life -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build test
+xcodebuild -project ios/Shtil/Shtil.xcodeproj -scheme Shtil -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build test
 ```
 
 ## Решения вне плана

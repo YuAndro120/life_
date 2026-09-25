@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"life/backend/internal/db/sqlcgen"
+	"shtil/backend/internal/db/sqlcgen"
 )
 
 type PGStore struct{ q *sqlcgen.Queries }

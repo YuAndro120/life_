@@ -18,11 +18,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"life/backend/internal/catalog"
-	"life/backend/internal/collector"
-	"life/backend/internal/config"
-	"life/backend/internal/db/sqlcgen"
-	"life/backend/internal/sources"
+	"shtil/backend/internal/catalog"
+	"shtil/backend/internal/collector"
+	"shtil/backend/internal/config"
+	"shtil/backend/internal/db/sqlcgen"
+	"shtil/backend/internal/sources"
 )
 
 func main() {
@@ -62,7 +62,7 @@ func run(cmd, catalogPath string, interval time.Duration) error {
 	case "once", "run":
 		agent := os.Getenv("COLLECTOR_USER_AGENT")
 		if agent == "" {
-			agent = "LifeBot/0.1 (personal news digest)"
+			agent = "ShtilBot/0.1 (personal news digest)"
 		}
 		r := collector.NewRunner(collector.NewPGStore(pool), sources.NewHTTPFetcher(agent), slog.Default())
 		r.Interval = interval

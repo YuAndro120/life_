@@ -1,5 +1,5 @@
 # Локальная разработка бэкенда. Требуется: docker compose -f ../infra/docker-compose.dev.yml up -d
-export DATABASE_URL ?= postgres://life:life_dev@127.0.0.1:5432/life?sslmode=disable
+export DATABASE_URL ?= postgres://shtil:shtil_dev@127.0.0.1:5432/shtil?sslmode=disable
 export TEST_DATABASE_URL ?= $(DATABASE_URL)
 MIGRATIONS = internal/db/migrations
 
@@ -39,4 +39,4 @@ test:
 	go test ./...
 
 test-integration: migrate seed
-	go test -count=1 ./internal/store/
+	go test -count=1 ./internal/store/ ./internal/collector/

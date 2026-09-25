@@ -13,7 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"life/backend/internal/config"
+	"shtil/backend/internal/config"
 )
 
 type seedFile struct {

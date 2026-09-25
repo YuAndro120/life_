@@ -1,4 +1,4 @@
-# Макеты «Суть»
+# Макеты «Штиль»
 
 Живой макет: https://claude.ai/artifact/7Kb1uD4cYoFEbiXjGm5nd1
 
@@ -24,3 +24,4 @@
 | DuskLaw | Сумерки — карточка закона |
 | DuskCalendar | Сумерки — календарь |
 | DuskFilters | Сумерки — фильтры |
+| LogoMonogram | Иконка и логотип «Штиль» (выбранная концепция) |
