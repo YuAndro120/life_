@@ -6,7 +6,7 @@ import Testing
     @Test func fixturesDecode() throws {
         let feed = try Fixtures.feed()
         let laws = try Fixtures.laws()
-        #expect(feed.stories.count == 9)
+        #expect(feed.stories.count == 11)
         #expect(feed.stats.postsTotal == 38)
         #expect(feed.stats.adsHidden == 7)
         #expect(laws.count == 6)

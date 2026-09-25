@@ -19,7 +19,12 @@ struct Story: Codable, Hashable, Identifiable, Sendable {
     let sourceCount: Int
     let sources: [SourceLink]
     let regionCode: String?
+    /// Страна большинства источников (RU, US, GB, EU). Нет у старых записей: считается «RU».
+    let country: String?
+    let lang: String?
     let updatedAt: Date
+
+    var countryCode: String { country ?? "RU" }
 }
 
 struct FeedStats: Codable, Hashable, Sendable {

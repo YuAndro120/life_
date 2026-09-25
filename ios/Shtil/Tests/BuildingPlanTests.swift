@@ -18,7 +18,7 @@ import Testing
         #expect(p.lawCount == 2)
         #expect(p.keptPosts <= p.totalPosts)
         #expect(p.hiddenPosts == p.totalPosts - p.keptPosts)
-        #expect(p.sourceCount == 9)
+        #expect(p.sourceCount == 14)
         #expect(p.cards.count == 3)
     }
 
@@ -53,7 +53,7 @@ import Testing
 
     @Test func stepTextsUsePlurals() throws {
         let p = try plan()
-        #expect(p.stepTexts[0] == "Собрали 38 постов из 9 источников")
+        #expect(p.stepTexts[0] == "Собрали 38 постов из 14 источников")
         #expect(p.stepTexts[2] == "Склеили повторы в 4 сюжета")
         #expect(p.stepTexts[3] == "Нашли 2 изменения в законах для тебя")
     }

@@ -4,7 +4,7 @@ import Foundation
 enum Topic: String, Codable, CaseIterable, Sendable {
     case economy, finance, law
     case techAi = "tech_ai"
-    case city, health, education, transport, housing, science, culture, sport, showbiz, crypto
+    case city, health, education, transport, housing, science, space, culture, sport, showbiz, crypto
     case politics, crime, incidents, disasters
 
     var title: String {
@@ -19,6 +19,7 @@ enum Topic: String, Codable, CaseIterable, Sendable {
         case .transport: "Транспорт"
         case .housing: "Жильё"
         case .science: "Наука"
+        case .space: "Космос"
         case .culture: "Культура"
         case .sport: "Спорт"
         case .showbiz: "Шоу-бизнес"

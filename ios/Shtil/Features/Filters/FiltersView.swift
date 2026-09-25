@@ -27,14 +27,63 @@ struct FiltersView: View {
                     SwitchRow(title: "Спокойный режим", hint: "Нейтральные заголовки, без «срочно»", isOn: $settings.calmMode)
                 }
 
-                section("02", "Тип информации") {
+                section("02", "Откуда новости") {
+                    Text("Издания этих стран. Пересказ всегда по-русски.")
+                        .font(theme.fonts.body(13)).foregroundStyle(theme.muted).padding(.top, isSage ? 8 : 12)
+                    FlowLayout(spacing: 8) {
+                        ForEach(NewsCountry.allCases, id: \.self) { country in
+                            ChipButton(title: country.title, isOn: model.settings.preferences.countries.contains(country.rawValue)) {
+                                toggleCountry(country)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 12)
+                }
+
+                section("03", "Мои интересы") {
+                    Text("Сюжеты по этим темам идут первыми и отмечены точкой.")
+                        .font(theme.fonts.body(13)).foregroundStyle(theme.muted).padding(.top, isSage ? 8 : 12)
+                    FlowLayout(spacing: 8) {
+                        ForEach(Topic.allCases, id: \.self) { topic in
+                            ChipButton(title: topic.title, isOn: model.settings.preferences.interests.contains(topic)) {
+                                var p = model.settings.preferences
+                                p.toggleInterest(topic)
+                                model.settings.preferences = p
+                            }
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    SwitchRow(title: "Только мои темы", hint: "Остальные сюжеты не показывать", isOn: Binding(
+                        get: { model.settings.preferences.onlyInterests },
+                        set: { var p = model.settings.preferences; p.onlyInterests = $0; model.settings.preferences = p }
+                    ), disabled: model.settings.preferences.interests.isEmpty)
+                }
+
+                section("04", "Размер выпуска") {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Сюжетов в выпуске").font(theme.fonts.body(17, .medium)).tracking(-0.17).foregroundStyle(theme.ink)
+                            Text("Выпуск можно дочитать до конца").font(theme.fonts.body(13)).foregroundStyle(theme.muted)
+                        }
+                        Spacer()
+                        HStack(spacing: 0) {
+                            stepButton("−", "Меньше") { setStoryLimit(model.settings.preferences.storyLimit - 1) }
+                            Text("\(model.settings.preferences.storyLimit)")
+                                .font(theme.fonts.heading(22, .semibold)).monospacedDigit().foregroundStyle(theme.ink).frame(width: 44)
+                            stepButton("+", "Больше") { setStoryLimit(model.settings.preferences.storyLimit + 1) }
+                        }
+                    }
+                    .frame(minHeight: 64)
+                }
+
+                section("05", "Тип информации") {
                     ForEach(InfoType.allCases, id: \.self) { type in
                         SwitchRow(title: Self.infoTitle(type), hint: Self.infoHint(type), isOn: infoBinding(type))
                         if type != InfoType.allCases.last && !isSage { Rule() }
                     }
                 }
 
-                section("03", "Тяжёлые темы") {
+                section("06", "Тяжёлые темы") {
                     PillSegments(
                         options: [(HeavyMode.hide, "Скрывать"), (.fold, "Сворачивать"), (.show, "Показывать")],
                         selection: heavyBinding
@@ -50,7 +99,7 @@ struct FiltersView: View {
                     .accessibilityElement(children: .contain)
                 }
 
-                section("04", "Стоп-темы") {
+                section("07", "Стоп-темы") {
                     FlowLayout(spacing: 8) {
                         ForEach(model.settings.preferences.stopTopics.sorted { $0.title < $1.title }, id: \.self) { topic in
                             Button { toggleStopTopic(topic) } label: {
@@ -76,11 +125,11 @@ struct FiltersView: View {
                     .padding(.top, isSage ? 0 : 16)
                 }
 
-                section("05", "Реклама") {
+                section("08", "Реклама") {
                     SwitchRow(title: "Скрывать рекламные посты", hint: "По маркировке «Реклама» и erid", isOn: $settings.hideAds)
                 }
 
-                section("06", "Расписание") {
+                section("09", "Расписание") {
                     PillSegments(
                         options: [(SchedulePreference.both, "Утро и вечер"), (.am, "Только утро"), (.pm, "Только вечер")],
                         selection: scheduleBinding, fontSize: 13
@@ -89,6 +138,10 @@ struct FiltersView: View {
                     if settings.schedulePreference != .pm { timeRow("Утренний выпуск", settings.morningMinutes, .morning) }
                     if settings.schedulePreference != .am { timeRow("Вечерний выпуск", settings.eveningMinutes, .evening) }
                     urgentRow
+                }
+
+                if hasHidden {
+                    section("10", "Скрытое") { hiddenSection }
                 }
             }
             .padding(.horizontal, 20)
@@ -217,6 +270,71 @@ struct FiltersView: View {
         model.settings.preferences = p
     }
 
+    private func toggleCountry(_ country: NewsCountry) {
+        var p = model.settings.preferences
+        if p.countries.contains(country.rawValue) {
+            guard p.countries.count > 1 else { return } // хотя бы одна страна должна остаться
+            p.countries.remove(country.rawValue)
+        } else {
+            p.countries.insert(country.rawValue)
+        }
+        model.settings.preferences = p
+    }
+
+    private func setStoryLimit(_ n: Int) {
+        var p = model.settings.preferences
+        p.storyLimit = min(40, max(3, n))
+        model.settings.preferences = p
+    }
+
+    private var hasHidden: Bool {
+        let p = model.settings.preferences
+        return !p.mutedSources.isEmpty || !p.hiddenStories.isEmpty
+    }
+
+    @ViewBuilder private var hiddenSection: some View {
+        let p = model.settings.preferences
+        if !p.mutedSources.isEmpty {
+            Text("Скрытые источники").font(theme.fonts.body(13)).foregroundStyle(theme.muted).padding(.top, isSage ? 8 : 12)
+            FlowLayout(spacing: 8) {
+                ForEach(p.mutedSources.sorted(), id: \.self) { title in
+                    Button {
+                        var q = model.settings.preferences
+                        q.mutedSources.remove(title)
+                        model.settings.preferences = q
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text(title)
+                            Text("×").foregroundStyle(theme.muted)
+                        }
+                        .font(theme.fonts.body(15, .medium)).foregroundStyle(theme.ink)
+                        .padding(.leading, 14).padding(.trailing, 12).frame(minHeight: 44)
+                        .background(Capsule().fill(theme.chipBg))
+                        .overlay(Capsule().strokeBorder(theme.chipBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Вернуть источник \(title)")
+                }
+            }
+            .padding(.vertical, 12)
+        }
+        if !p.hiddenStories.isEmpty {
+            Button {
+                var q = model.settings.preferences
+                q.hiddenStories = []
+                model.settings.preferences = q
+            } label: {
+                HStack {
+                    Text("Скрытых сюжетов: \(p.hiddenStories.count)").font(theme.fonts.body(17, .medium)).foregroundStyle(theme.ink)
+                    Spacer()
+                    Text("Вернуть все →").metaStyle(color: theme.accent)
+                }
+                .frame(minHeight: 60).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     static func infoTitle(_ t: InfoType) -> String {
         switch t {
         case .fact: "Факты"
@@ -259,7 +377,7 @@ private struct TopicPickerSheet: View {
                     ForEach(Topic.allCases, id: \.self) { topic in
                         Button {
                             var p = model.settings.preferences
-                            if stopped.contains(topic) { p.stopTopics.remove(topic) } else { p.stopTopics.insert(topic) }
+                            p.toggleStopTopic(topic)
                             model.settings.preferences = p
                         } label: {
                             HStack {
