@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Профиль — онбординг</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2432D0}a:hover{color:#22211E}
+</style>
+</helmet>
+<div style="width: 390px; height: 1300px; box-sizing: border-box; background: #F2F1EC; color: #22211E; font-family: 'Onest', -apple-system, 'Helvetica Neue', sans-serif; display: flex; flex-direction: column; padding: 54px 20px 34px 20px">
+<div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F; align-items: center"><a href="OnbWelcome.dc.html" style="display: flex; align-items: center; min-height: 44px; color: #22211E; text-decoration: none">← Назад</a><span style="color: #22211E">01 / 03</span></div>
+<div style="margin-top: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px">
+<span style="height: 4px; border-radius: 999px; background: #22211E"></span>
+<span style="height: 4px; border-radius: 999px; background: #C9C7BF"></span>
+<span style="height: 4px; border-radius: 999px; background: #C9C7BF"></span>
+</div>
+<h1 style="margin: 18px 0 0 0; font-size: 44px; line-height: 0.98; font-weight: 700; letter-spacing: -0.055em">Что про тебя важно знать<span style="color: #2432D0">?</span></h1>
+<p style="margin: 16px 0 0 0; font-size: 16px; line-height: 1.5; color: #66655F">Покажем только те законы и изменения, которые касаются тебя.</p>
+<div style="margin-top: 32px; display: flex; flex-direction: column; gap: 26px">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+<div role="group" aria-label="{{g.title}}" style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; padding-bottom: 10px; border-bottom: 1px solid #D8D6CE; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase">{{g.index}} — {{g.title}}</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{g.items}}" as="item" hint-placeholder-count="3">
+<button aria-pressed="{{item.pressed}}" onClick="{{item.toggle}}" style="{{item.style}}">{{item.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<div style="display: flex; flex-direction: column">
+<h2 style="margin: 0; padding-bottom: 10px; border-bottom: 1px solid #D8D6CE; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase">06 — Регион</h2>
+<button style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 0; border: 0; border-bottom: 1px solid #D8D6CE; background: transparent; font: inherit; font-size: 17px; font-weight: 500; color: #22211E; cursor: pointer"><span>Для региональных законов</span><span style="color: #2432D0">Выбрать →</span></button>
+</div>
+</div>
+<div style="margin-top: 28px; display: flex; gap: 10px; align-items: flex-start; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 12px; line-height: 1.6; color: #22211E">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #2432D0; flex-shrink: 0; margin-top: 6px"></span>
+<span>Профиль хранится только на этом телефоне. Сервер не знает, кто ты и что читаешь.</span>
+</div>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 4px">
+<a href="OnbCalm.dc.html" style="display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 0 20px; border-radius: 18px; background: #22211E; color: #F2F1EC; font-size: 16px; font-weight: 500; text-decoration: none"><span>Дальше</span><span aria-hidden="true">→</span></a>
+<a href="Main.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 44px; color: #66655F; font-size: 15px; font-weight: 500; text-decoration: none">Пропустить</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const initial = { 'Мужчина': true, '20–25': true, 'ИП': true, 'Снимаю': true, 'Вожу авто': true };
+    const sel = (this.state && this.state.sel) || initial;
+    const base = 'display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; ';
+    const on = base + 'border: 1px solid #22211E; background: #22211E; color: #F2F1EC';
+    const off = base + 'border: 1px solid #C9C7BF; background: #FAF9F6; color: #22211E';
+    const groups = [
+      { title: 'О себе', items: ['Мужчина', 'Женщина'] },
+      { title: 'Возраст', items: ['До 20', '20–25', '26–35', '36–50', '50+'] },
+      { title: 'Работа', items: ['По найму', 'ИП', 'Самозанятый', 'Студент'] },
+      { title: 'Жильё', items: ['Снимаю', 'Своё', 'Ипотека'] },
+      { title: 'Транспорт', items: ['Вожу авто', 'Не вожу'] }
+    ];
+    return {
+      groups: groups.map((g, i) => ({
+        title: g.title,
+        index: '0' + (i + 1),
+        items: g.items.map((label) => ({
+          label: label,
+          style: sel[label] ? on : off,
+          pressed: sel[label] ? 'true' : 'false',
+          toggle: () => this.setState({ sel: Object.assign({}, sel, { [label]: !sel[label] }) })
+        }))
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Календарь изменений</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2432D0}a:hover{color:#22211E}
+</style>
+</helmet>
+<div style="width: 390px; height: 1060px; box-sizing: border-box; background: #F2F1EC; color: #22211E; font-family: 'Onest', -apple-system, 'Helvetica Neue', sans-serif; display: flex; flex-direction: column">
+<main style="flex-grow: 1; padding: 54px 20px 32px 20px; display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F"><span>Календарь</span><span>Сегодня 25.09.2026</span></div>
+<h1 style="margin: 14px 0 0 0; font-size: 48px; line-height: 0.95; font-weight: 700; letter-spacing: -0.055em">Что меняется<span style="color: #2432D0">.</span></h1>
+<div style="margin-top: 22px; display: flex; gap: 24px; border-bottom: 1px solid #D8D6CE">
+<button aria-pressed="true" style="min-height: 44px; margin-bottom: -1px; padding: 0; border: 0; border-bottom: 2px solid #22211E; background: transparent; font: inherit; font-size: 15px; font-weight: 600; color: #22211E; cursor: pointer">Про меня</button>
+<button aria-pressed="false" style="min-height: 44px; margin-bottom: -1px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: transparent; font: inherit; font-size: 15px; font-weight: 500; color: #66655F; cursor: pointer">Все изменения</button>
+</div>
+<div style="display: grid; grid-template-columns: 62px minmax(0, 1fr) 44px; gap: 12px; align-items: start; padding: 20px 0; border-bottom: 1px solid #D8D6CE">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 38px; line-height: 0.9; font-weight: 600; letter-spacing: -0.05em; font-variant-numeric: tabular-nums">01</span><span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Окт</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">ИП на УСН · <span style="color: #2432D0">Д–6</span></span>
+<a href="LawDetail.dc.html" style="font-size: 17px; line-height: 1.3; font-weight: 500; letter-spacing: -0.01em; color: #22211E; text-decoration: none">Новый срок уведомлений об авансовых платежах</a>
+</div>
+<button aria-label="Напоминание включено" aria-pressed="true" style="width: 44px; height: 44px; border: 1px solid #22211E; border-radius: 50%; background: #22211E; color: #F2F1EC; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 62px minmax(0, 1fr) 44px; gap: 12px; align-items: start; padding: 20px 0; border-bottom: 1px solid #D8D6CE">
+<div></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Снимаю жильё · <span style="color: #2432D0">Д–6</span></span>
+<span style="font-size: 17px; line-height: 1.3; font-weight: 500; letter-spacing: -0.01em">Обновлённые правила регистрации по месту пребывания</span>
+</div>
+<button aria-label="Напомнить" aria-pressed="false" style="width: 44px; height: 44px; border: 1px solid #C9C7BF; border-radius: 50%; background: transparent; color: #22211E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 62px minmax(0, 1fr) 44px; gap: 12px; align-items: start; padding: 20px 0; border-bottom: 1px solid #D8D6CE">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 38px; line-height: 0.9; font-weight: 600; letter-spacing: -0.05em; font-variant-numeric: tabular-nums">15</span><span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Окт</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Воинский учёт · Д–20</span>
+<span style="font-size: 17px; line-height: 1.3; font-weight: 500; letter-spacing: -0.01em">Новые сроки уведомления о смене места жительства</span>
+</div>
+<button aria-label="Напоминание включено" aria-pressed="true" style="width: 44px; height: 44px; border: 1px solid #22211E; border-radius: 50%; background: #22211E; color: #F2F1EC; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 62px minmax(0, 1fr) 44px; gap: 12px; align-items: start; padding: 20px 0; border-bottom: 1px solid #D8D6CE">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 38px; line-height: 0.9; font-weight: 600; letter-spacing: -0.05em; font-variant-numeric: tabular-nums">01</span><span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Янв 27</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">ИП на УСН · Д–98</span>
+<span style="font-size: 17px; line-height: 1.3; font-weight: 500; letter-spacing: -0.01em">Изменение порядка расчёта страховых взносов</span>
+</div>
+<button aria-label="Напомнить" aria-pressed="false" style="width: 44px; height: 44px; border: 1px solid #C9C7BF; border-radius: 50%; background: transparent; color: #22211E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 62px minmax(0, 1fr) 44px; gap: 12px; align-items: start; padding: 20px 0; border-bottom: 1px solid #D8D6CE">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 38px; line-height: 0.9; font-weight: 600; letter-spacing: -0.05em; font-variant-numeric: tabular-nums">01</span><span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Мар 27</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #66655F">Водители · Д–157</span>
+<span style="font-size: 17px; line-height: 1.3; font-weight: 500; letter-spacing: -0.01em">Переоформление ОСАГО при продаже автомобиля</span>
+</div>
+<button aria-label="Напомнить" aria-pressed="false" style="width: 44px; height: 44px; border: 1px solid #C9C7BF; border-radius: 50%; background: transparent; color: #22211E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></svg></button>
+</div>
+<p style="margin: 24px 0 0 0; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; line-height: 1.6; color: #66655F">Только подписанные законы. Напоминаем за 7 дней до вступления в силу.</p>
+</main>
+<nav aria-label="Разделы" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0 20px 30px 20px; border-top: 1px solid #D8D6CE; background: #F2F1EC">
+<a href="Main.dc.html" style="display: flex; align-items: flex-start; min-height: 50px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #66655F; font-size: 13px; font-weight: 500">Сегодня</a>
+<a href="Calendar.dc.html" aria-current="page" style="display: flex; align-items: flex-start; min-height: 50px; padding-top: 12px; margin-top: -1px; border-top: 2px solid #22211E; text-decoration: none; color: #22211E; font-size: 13px; font-weight: 600">Календарь</a>
+<a href="Settings.dc.html" style="display: flex; align-items: flex-start; min-height: 50px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #66655F; font-size: 13px; font-weight: 500">Фильтры</a>
+<a href="Onboarding.dc.html" style="display: flex; align-items: flex-start; min-height: 50px; padding-top: 12px; margin-top: -1px; border-top: 2px solid transparent; text-decoration: none; color: #66655F; font-size: 13px; font-weight: 500">Профиль</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

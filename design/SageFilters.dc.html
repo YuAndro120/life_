@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Шалфей — фильтры</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,400;1,500&amp;family=Golos+Text:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F6B4F}a:hover{color:#1E2621}
+</style>
+</helmet>
+<div style="width: 390px; height: 1560px; box-sizing: border-box; background: #EDF0EA; color: #1E2621; font-family: 'Golos Text', -apple-system, 'Helvetica Neue', sans-serif; display: flex; flex-direction: column">
+<main style="flex-grow: 1; padding: 54px 20px 36px 20px; display: flex; flex-direction: column">
+<div style="font-size: 14px; color: #5B665E">Настройки хранятся только на телефоне</div>
+<h1 style="margin: 8px 0 0 0; font-family: 'Spectral', Georgia, serif; font-size: 40px; line-height: 1.08; font-weight: 500; letter-spacing: -0.02em">Фильтры<br><span style="font-style: italic; font-weight: 400; color: #5B665E">что попадает в выпуск</span></h1>
+<h2 style="margin: 30px 4px 10px 4px; font-size: 15px; font-weight: 600; color: #245740">Тон</h2>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 12px 0 18px; border-radius: 22px; background: #FAFCF9">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 500">Спокойный режим</span><span style="font-size: 13px; color: #5B665E">Нейтральные заголовки, без «срочно»</span></div>
+<button role="switch" aria-checked="{{calm.checked}}" aria-label="Спокойный режим" onClick="{{calm.toggle}}" style="flex-shrink: 0; width: 56px; height: 44px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: flex-end; cursor: pointer"><span style="{{calm.track}}"><span style="{{calm.knob}}"></span></span></button>
+</div>
+<h2 style="margin: 30px 4px 10px 4px; font-size: 15px; font-weight: 600; color: #245740">Тип информации</h2>
+<div style="border-radius: 22px; background: #FAFCF9; padding: 0 12px 0 18px">
+<sc-for list="{{types}}" as="t" hint-placeholder-count="5">
+<div style="{{t.rowStyle}}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 500">{{t.label}}</span><span style="font-size: 13px; color: #5B665E">{{t.hint}}</span></div>
+<button role="switch" aria-checked="{{t.checked}}" aria-label="{{t.label}}" onClick="{{t.toggle}}" style="flex-shrink: 0; width: 56px; height: 44px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: flex-end; cursor: pointer"><span style="{{t.track}}"><span style="{{t.knob}}"></span></span></button>
+</div>
+</sc-for>
+</div>
+<h2 style="margin: 30px 4px 10px 4px; font-size: 15px; font-weight: 600; color: #245740">Тяжёлые темы</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 999px; background: #DFE6DE">
+<button aria-pressed="false" style="min-height: 42px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 14px; font-weight: 500; color: #36403A; cursor: pointer">Скрывать</button>
+<button aria-pressed="true" style="min-height: 42px; border: 0; border-radius: 999px; background: #2F6B4F; font: inherit; font-size: 14px; font-weight: 600; color: #FAFCF9; cursor: pointer">Сворачивать</button>
+<button aria-pressed="false" style="min-height: 42px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 14px; font-weight: 500; color: #36403A; cursor: pointer">Показывать</button>
+</div>
+<div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 0 10px 0 18px; border-radius: 22px; background: #FAFCF9">
+<span style="font-size: 16px; font-weight: 500">Не больше в выпуске</span>
+<div style="display: flex; align-items: center; gap: 4px">
+<button aria-label="Меньше" style="width: 44px; height: 44px; border: 0; border-radius: 50%; background: #EDF0EA; font: inherit; font-size: 20px; color: #245740; cursor: pointer">−</button>
+<span style="width: 36px; text-align: center; font-family: 'Spectral', Georgia, serif; font-size: 24px; font-weight: 600">3</span>
+<button aria-label="Больше" style="width: 44px; height: 44px; border: 0; border-radius: 50%; background: #EDF0EA; font: inherit; font-size: 20px; color: #245740; cursor: pointer">+</button>
+</div>
+</div>
+<h2 style="margin: 30px 4px 10px 4px; font-size: 15px; font-weight: 600; color: #245740">Стоп-темы</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button aria-label="Убрать стоп-тему Политика" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: #FAFCF9; font: inherit; font-size: 15px; font-weight: 500; color: #1E2621; cursor: pointer">Политика<span aria-hidden="true" style="color: #5B665E">×</span></button>
+<button aria-label="Убрать стоп-тему Криминал" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: #FAFCF9; font: inherit; font-size: 15px; font-weight: 500; color: #1E2621; cursor: pointer">Криминал<span aria-hidden="true" style="color: #5B665E">×</span></button>
+<button style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1.5px dashed #8FA597; border-radius: 999px; background: transparent; font: inherit; font-size: 15px; font-weight: 500; color: #245740; cursor: pointer">+ Добавить</button>
+</div>
+<h2 style="margin: 30px 4px 10px 4px; font-size: 15px; font-weight: 600; color: #245740">Реклама</h2>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 12px 0 18px; border-radius: 22px; background: #FAFCF9">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 500">Скрывать рекламные посты</span><span style="font-size: 13px; color: #5B665E">По маркировке «Реклама» и erid</span></div>
+<button role="switch" aria-checked="{{ads.checked}}" aria-label="Скрывать рекламные посты" onClick="{{ads.toggle}}" style="flex-shrink: 0; width: 56px; height: 44px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: flex-end; cursor: pointer"><span style="{{ads.track}}"><span style="{{ads.knob}}"></span></span></button>
+</div>
+<h2 style="margin: 30px 4px 10px 4px; font-size: 15px; font-weight: 600; color: #245740">Расписание</h2>
+<div style="display: flex; flex-direction: column">
+<button style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 60px; padding: 0 18px; border: 0; border-bottom: 1px solid #E3E9E2; border-radius: 22px 22px 0 0; background: #FAFCF9; font: inherit; color: #1E2621; text-align: left; cursor: pointer"><span style="font-size: 16px; font-weight: 500">Утренний выпуск</span><span style="font-family: 'Spectral', Georgia, serif; font-size: 21px; font-weight: 600; color: #245740">08:00</span></button>
+<button style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 60px; padding: 0 18px; border: 0; border-bottom: 1px solid #E3E9E2; border-radius: 0; background: #FAFCF9; font: inherit; color: #1E2621; text-align: left; cursor: pointer"><span style="font-size: 16px; font-weight: 500">Вечерний выпуск</span><span style="font-family: 'Spectral', Georgia, serif; font-size: 21px; font-weight: 600; color: #245740">19:00</span></button>
+<button style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 60px; padding: 0 18px; border: 0; border-radius: 0 0 22px 22px; background: #FAFCF9; font: inherit; color: #1E2621; text-align: left; cursor: pointer"><span style="font-size: 16px; font-weight: 500">Срочные уведомления</span><span style="font-size: 14px; font-weight: 500; color: #2F6B4F">по ключевым словам →</span></button>
+</div>
+</main>
+<nav aria-label="Разделы" style="margin: 0 12px 28px 12px; padding: 6px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; border-radius: 28px; background: #FAFCF9; box-shadow: 0 6px 20px rgba(30,38,33,0.08)">
+<a href="ThemeSage.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 22px; text-decoration: none; color: #5B665E; font-size: 13px; font-weight: 500">Сегодня</a>
+<a href="SageCalendar.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 22px; text-decoration: none; color: #5B665E; font-size: 13px; font-weight: 500">Календарь</a>
+<a href="SageFilters.dc.html" aria-current="page" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 22px; background: #DAE7DD; text-decoration: none; color: #245740; font-size: 13px; font-weight: 600">Фильтры</a>
+<a href="Onboarding.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 22px; text-decoration: none; color: #5B665E; font-size: 13px; font-weight: 500">Профиль</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const defaults = { calm: true, facts: true, official: true, opinions: false, forecasts: false, rumors: false, ads: true };
+    const s = Object.assign({}, defaults, (this.state && this.state.sw) || {});
+    const track = 'display: flex; align-items: center; width: 50px; height: 30px; box-sizing: border-box; padding: 2px; border-radius: 999px; transition: background 0.2s; ';
+    const knob = 'width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 3px rgba(30,38,33,0.25); transition: transform 0.2s; ';
+    const mk = (key) => ({
+      checked: s[key] ? 'true' : 'false',
+      track: track + (s[key] ? 'background: #2F6B4F' : 'background: #C6D0C7'),
+      knob: knob + (s[key] ? 'transform: translateX(20px)' : 'transform: translateX(0)'),
+      toggle: () => this.setState({ sw: Object.assign({}, s, { [key]: !s[key] }) })
+    });
+    const rows = [
+      { key: 'facts', label: 'Факты', hint: 'Что произошло, без оценок' },
+      { key: 'official', label: 'Официальные решения', hint: 'Законы, постановления, ведомства' },
+      { key: 'opinions', label: 'Мнения экспертов', hint: 'Оценки и комментарии' },
+      { key: 'forecasts', label: 'Прогнозы', hint: '«Что будет, если…»' },
+      { key: 'rumors', label: 'Неподтверждённое', hint: '«По данным источников…»' }
+    ];
+    const rowBase = 'display: flex; align-items: center; gap: 12px; min-height: 66px';
+    return {
+      calm: mk('calm'),
+      ads: mk('ads'),
+      types: rows.map((r, i) => Object.assign({}, r, mk(r.key), { rowStyle: i === rows.length - 1 ? rowBase : rowBase + '; border-bottom: 1px solid #E3E9E2' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

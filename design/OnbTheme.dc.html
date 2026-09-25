@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Онбординг — оформление</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Spectral:ital,wght@0,500;0,600;1,400&amp;family=Golos+Text:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2432D0}a:hover{color:#22211E}
+</style>
+</helmet>
+<div style="width: 390px; height: 940px; box-sizing: border-box; background: {{t.bg}}; color: {{t.ink}}; font-family: {{t.body}}; display: flex; flex-direction: column; padding: 54px 20px 34px 20px; transition: background 0.35s, color 0.35s">
+<div style="display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: {{t.ink}}"><a href="OnbCalm.dc.html" style="display: flex; align-items: center; min-height: 44px; color: {{t.ink}}; text-decoration: none">← Назад</a><span>03 / 03</span></div>
+<div style="margin-top: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px">
+<span style="height: 4px; border-radius: 999px; background: {{t.ink}}"></span>
+<span style="height: 4px; border-radius: 999px; background: {{t.ink}}"></span>
+<span style="height: 4px; border-radius: 999px; background: {{t.ink}}"></span>
+</div>
+<h1 style="{{t.h1}}">Как будет выглядеть выпуск<span style="color: {{t.accent}}">?</span></h1>
+<p style="margin: 16px 0 0 0; font-size: 16px; line-height: 1.5; color: {{t.muted}}">Выбери тему, экран сразу покажет её. Сменить можно в любой момент.</p>
+<div role="radiogroup" aria-label="Тема оформления" style="margin-top: 26px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+<button role="radio" aria-checked="{{th.checked}}" onClick="{{th.pick}}" style="{{th.cardStyle}}">
+<span style="{{th.preview}}">
+<span style="{{th.bar1}}"></span>
+<span style="{{th.bar2}}"></span>
+<span style="{{th.plate}}"><span style="{{th.card}}"><span style="{{th.dot}}"></span><span style="{{th.cardLine}}"></span></span></span>
+<span style="{{th.bar3}}"></span>
+<span style="{{th.bar4}}"></span>
+</span>
+<span style="{{th.nameStyle}}">{{th.name}}</span>
+<span style="{{th.descStyle}}">{{th.desc}}</span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top: 24px; display: flex; align-items: center; gap: 12px; min-height: 68px; border-top: 1px solid {{t.line}}; border-bottom: 1px solid {{t.line}}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 17px; font-weight: 500">Сумерки по вечерам</span><span style="font-size: 13px; color: {{t.muted}}">Тёмная тема сама включится после 19:00</span></div>
+<button role="switch" aria-checked="{{auto.checked}}" aria-label="Сумерки по вечерам" onClick="{{auto.toggle}}" style="flex-shrink: 0; width: 52px; height: 44px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: flex-end; cursor: pointer"><span style="{{auto.track}}"><span style="{{auto.knob}}"></span></span></button>
+</div>
+<div style="margin-top: 22px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 17px; font-weight: 500">Когда присылать выпуск</span>
+<div role="radiogroup" aria-label="Расписание выпусков" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 999px; background: {{t.seg}}">
+<sc-for list="{{scheds}}" as="sc" hint-placeholder-count="3">
+<button role="radio" aria-checked="{{sc.checked}}" onClick="{{sc.pick}}" style="{{sc.style}}">{{sc.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="margin-top: auto; padding-top: 28px">
+<a href="OnbBuilding.dc.html" style="display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 0 20px; border-radius: 18px; background: {{t.btnBg}}; color: {{t.btnText}}; font-size: 16px; font-weight: 500; text-decoration: none; transition: background 0.35s"><span>Собрать первый выпуск</span><span aria-hidden="true">→</span></a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":940}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const key = st.theme || 'paper';
+    const auto = st.auto === undefined ? true : st.auto;
+    const sched = st.sched || 'both';
+    const onest = "'Onest', -apple-system, 'Helvetica Neue', sans-serif";
+    const P = {
+      paper: { name: 'Бумага', desc: 'Собранно, как хорошая газета', bg: '#F2F1EC', ink: '#22211E', muted: '#66655F', line: '#D8D6CE', accent: '#2432D0', plate: '#E4E7F6', card: '#FBFBFE', seg: '#E6E4DD', btnBg: '#22211E', btnText: '#F2F1EC', body: onest,
+        head: "font-family: 'Onest', -apple-system, sans-serif; font-size: 44px; line-height: 0.98; font-weight: 700; letter-spacing: -0.055em" },
+      sage: { name: 'Шалфей', desc: 'Мягко и спокойно, как утро', bg: '#EDF0EA', ink: '#1E2621', muted: '#5B665E', line: '#D2DAD1', accent: '#2F6B4F', plate: '#DAE7DD', card: '#FAFCF9', seg: '#DFE6DE', btnBg: '#2F6B4F', btnText: '#FAFCF9', body: "'Golos Text', -apple-system, 'Helvetica Neue', sans-serif",
+        head: "font-family: 'Spectral', Georgia, serif; font-size: 42px; line-height: 1.05; font-weight: 500; letter-spacing: -0.02em" },
+      dusk: { name: 'Сумерки', desc: 'Тёмная, бережёт глаза вечером', bg: '#1C1D22', ink: '#ECEAE4', muted: '#A3A19B', line: '#34363E', accent: '#A9B3FF', plate: '#262937', card: '#30344A', seg: '#2A2C34', btnBg: '#A9B3FF', btnText: '#1C1D22', body: onest,
+        head: "font-family: 'Onest', -apple-system, sans-serif; font-size: 44px; line-height: 0.98; font-weight: 700; letter-spacing: -0.055em" }
+    };
+    const cur = P[key];
+    const t = Object.assign({}, cur, { h1: 'margin: 18px 0 0 0; ' + cur.head });
+    const themes = ['paper', 'sage', 'dusk'].map((k) => {
+      const p = P[k];
+      const sel = k === key;
+      return {
+        name: p.name,
+        desc: p.desc,
+        checked: sel ? 'true' : 'false',
+        pick: () => this.setState({ theme: k }),
+        cardStyle: 'display: flex; flex-direction: column; gap: 8px; padding: 5px 5px 10px 5px; border-radius: 22px; border: 2px solid ' + (sel ? cur.accent : 'transparent') + '; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; transition: border-color 0.25s',
+        preview: 'display: flex; flex-direction: column; gap: 6px; height: 148px; box-sizing: border-box; padding: 12px 10px; border-radius: 16px; background: ' + p.bg + '; box-shadow: inset 0 0 0 1px ' + (k === 'dusk' ? '#3A3C46' : p.line),
+        bar1: 'width: 46%; height: 9px; border-radius: 5px; background: ' + p.ink,
+        bar2: 'width: 72%; height: 5px; border-radius: 3px; background: ' + p.muted + '; opacity: 0.6',
+        plate: 'margin-top: 4px; display: flex; padding: 5px; border-radius: 10px; background: ' + p.plate,
+        card: 'flex-grow: 1; display: flex; align-items: center; gap: 5px; height: 30px; box-sizing: border-box; padding: 0 7px; border-radius: 7px; background: ' + p.card,
+        dot: 'width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: ' + p.accent,
+        cardLine: 'flex-grow: 1; height: 4px; border-radius: 2px; background: ' + p.ink + '; opacity: 0.55',
+        bar3: 'margin-top: 4px; width: 88%; height: 5px; border-radius: 3px; background: ' + p.ink + '; opacity: 0.5',
+        bar4: 'width: 60%; height: 5px; border-radius: 3px; background: ' + p.muted + '; opacity: 0.5',
+        nameStyle: 'padding: 0 5px; font-size: 15px; font-weight: 600; color: ' + cur.ink,
+        descStyle: 'padding: 0 5px; font-size: 12px; line-height: 1.35; color: ' + cur.muted
+      };
+    });
+    const track = 'display: flex; align-items: center; width: 42px; height: 24px; box-sizing: border-box; padding: 2px; border: 1.5px solid ' + cur.ink + '; border-radius: 999px; transition: background 0.18s; ';
+    const knob = 'width: 17px; height: 17px; border-radius: 50%; transition: transform 0.18s; ';
+    const scheds = [
+      { k: 'both', label: 'Утро и вечер' },
+      { k: 'am', label: 'Только утро' },
+      { k: 'pm', label: 'Только вечер' }
+    ].map((s) => ({
+      label: s.label,
+      checked: sched === s.k ? 'true' : 'false',
+      pick: () => this.setState({ sched: s.k }),
+      style: 'min-height: 42px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; ' + (sched === s.k ? 'background: ' + cur.ink + '; color: ' + cur.bg : 'background: transparent; color: ' + cur.ink)
+    }));
+    return {
+      t: t,
+      themes: themes,
+      scheds: scheds,
+      auto: {
+        checked: auto ? 'true' : 'false',
+        track: track + (auto ? 'background: ' + cur.ink : 'background: transparent'),
+        knob: knob + (auto ? 'background: ' + cur.bg + '; transform: translateX(18px)' : 'background: ' + cur.ink + '; transform: translateX(0)'),
+        toggle: () => this.setState({ auto: !auto })
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
