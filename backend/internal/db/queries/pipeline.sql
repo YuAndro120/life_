@@ -65,7 +65,7 @@ UPDATE stories SET
     title_neutral = @title, summary = @summary, meaning = sqlc.narg('meaning'),
     region_code = sqlc.narg('region_code'),
     digest_post_count = post_count, digest_attempts = 0, digest_error = NULL, digest_at = @at::timestamptz,
-    status = CASE WHEN @newsworthy::boolean THEN status ELSE 'skipped' END
+    status = CASE WHEN NOT @newsworthy::boolean THEN 'skipped' WHEN status = 'skipped' THEN 'draft' ELSE status END
 WHERE id = @id;
 
 -- name: RecordDigestFailure :exec
