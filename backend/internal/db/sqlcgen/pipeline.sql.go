@@ -350,7 +350,7 @@ UPDATE stories SET
     title_neutral = $4, summary = $5, meaning = $6,
     region_code = $7,
     digest_post_count = post_count, digest_attempts = 0, digest_error = NULL, digest_at = $8::timestamptz,
-    status = CASE WHEN $9::boolean THEN status ELSE 'skipped' END
+    status = CASE WHEN NOT $9::boolean THEN 'skipped' WHEN status = 'skipped' THEN 'draft' ELSE status END
 WHERE id = $10
 `
 
