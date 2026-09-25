@@ -346,10 +346,10 @@ docker compose -f infra/docker-compose.dev.yml up -d   # postgres 16 + pgvector
 - [x] Go-модуль, `cmd/api` с `/v1/health`, docker-compose с Postgres + pgvector (compose написан, `docker compose up` не проверен).
 
 ### Фаза 1 — iOS на моках (3–5 дней) — результат: приложение на телефоне выглядит как макет
-- [ ] Theme: токены трёх тем, шрифты, `@Environment(\.theme)`, авто-Сумерки после 19:00.
-- [ ] Модели `Story`, `Law`, `Edition` и JSON-фикстуры в формате API (раздел 8).
-- [ ] SwiftData-модели профиля и фильтров.
-- [ ] FilterEngine + unit-тесты (подбор законов по тегам, стоп-темы, режимы тяжёлых тем).
+- [x] Theme: токены трёх тем, шрифты, `@Environment(\.theme)`, авто-Сумерки после 19:00 (до 06:00).
+- [x] Модели `Story`, `Law`, `Edition` и JSON-фикстуры в формате API (раздел 8).
+- [x] SwiftData-модели профиля и фильтров.
+- [x] FilterEngine + unit-тесты (подбор законов по тегам, стоп-темы, режимы тяжёлых тем).
 - [ ] Экраны: Today, LawDetail, Calendar, Filters, кастомный таб-бар.
 - [ ] Онбординг: Welcome → Profile → Calm → Theme (живая перекраска) → Building (анимация).
 - [ ] Локальные уведомления: выпуск по расписанию, напоминания о законах.
