@@ -13,7 +13,7 @@ import (
 
 const lawFunctionName = "extract_law"
 
-const lawSystemPrompt = `Ты извлекаешь структуру из текста российского федерального закона для приложения-дайджеста. Ты ничего не пересказываешь от себя и не додумываешь.
+var lawSystemPrompt = `Ты извлекаешь структуру из текста российского федерального закона для приложения-дайджеста. Ты ничего не пересказываешь от себя и не додумываешь.
 
 Правила:
 1. Используй только текст закона. Если чего-то в тексте нет, оставь поле пустым. Никаких предположений и оценок.
@@ -22,13 +22,13 @@ const lawSystemPrompt = `Ты извлекаешь структуру из те�
 4. what_changed: 1–3 коротких предложения, что именно меняется. Только факты из текста.
 5. who_affected: кого касается, одним предложением. Только то, что следует из текста.
 6. actions: до 3 действий, которые человек должен или может сделать, ТОЛЬКО если закон прямо их предписывает (подать, уведомить, зарегистрировать до срока). Иначе пустой список.
-7. audience_tags: только из разрешённого списка. "all", если касается всех граждан.
+7. audience_tags: ОБЯЗАТЕЛЬНОЕ поле, строка с 1–4 тегами через запятую, только из списка: ` + strings.Join(llm.AudienceTags, ", ") + `. Пример: "work:ip_usn, work:employee". "all", если касается всех граждан. Пустым быть не может.
 8. effective_at: дата вступления в силу в формате YYYY-MM-DD, только если в тексте она указана календарной датой (например «вступает в силу с 1 марта 2027 года»). Если сказано «по истечении 10 дней после опубликования» или дата разная для разных статей, оставь пустую строку.
-9. quotes: для what_changed, who_affected и effective_at дай ДОСЛОВНУЮ цитату из текста (12–200 знаков), скопированную без изменений. Цитата для effective_at пустая, если effective_at пустой.`
+9. quotes: для what_changed, who_affected и effective_at дай ДОСЛОВНУЮ цитату из текста (12–200 знаков), скопированную без изменений. Цитата для effective_at пустая, если effective_at пустой.
+10. what_changed не длиннее 300 знаков: назови главное, без перечисления всех статей.`
 
 func lawFunction() chatFunction {
 	str := func(desc string) map[string]any { return map[string]any{"type": "string", "description": desc} }
-	tags := map[string]any{"type": "array", "items": map[string]any{"type": "string", "enum": llm.AudienceTags}}
 	return chatFunction{
 		Name:        lawFunctionName,
 		Description: "Записать структуру закона с цитатами из текста",
@@ -40,7 +40,7 @@ func lawFunction() chatFunction {
 				"what_changed":  str("что меняется, 1–3 предложения"),
 				"who_affected":  str("кого касается, одно предложение"),
 				"actions":       map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "до 3 действий, только если прямо предписаны"},
-				"audience_tags": tags,
+				"audience_tags": str("теги аудитории через запятую из списка, обязательно"),
 				"effective_at":  str("YYYY-MM-DD или пустая строка"),
 				"quotes": map[string]any{
 					"type": "object",
@@ -52,7 +52,7 @@ func lawFunction() chatFunction {
 					"required": []string{"what_changed", "who_affected"},
 				},
 			},
-			"required": []string{"relevant"},
+			"required": []string{"relevant", "title", "what_changed", "who_affected", "audience_tags"},
 		},
 	}
 }
@@ -122,7 +122,7 @@ func parseLaw(resp chatResponse) (llm.LawDraft, error) {
 		WhatChanged  string   `json:"what_changed"`
 		WhoAffected  string   `json:"who_affected"`
 		Actions      []string `json:"actions"`
-		AudienceTags []string `json:"audience_tags"`
+		AudienceTags string   `json:"audience_tags"`
 		EffectiveAt  string   `json:"effective_at"`
 		Quotes       struct {
 			WhatChanged string `json:"what_changed"`
@@ -139,7 +139,7 @@ func parseLaw(resp chatResponse) (llm.LawDraft, error) {
 	trim := strings.TrimSpace
 	d := llm.LawDraft{
 		Relevant: *raw.Relevant, Title: trim(raw.Title), WhatChanged: trim(raw.WhatChanged), WhoAffected: trim(raw.WhoAffected),
-		AudienceTags: raw.AudienceTags, EffectiveAt: trim(raw.EffectiveAt),
+		AudienceTags: splitTags(raw.AudienceTags), EffectiveAt: trim(raw.EffectiveAt),
 		Quotes: llm.Quotes{WhatChanged: trim(raw.Quotes.WhatChanged), WhoAffected: trim(raw.Quotes.WhoAffected), EffectiveDay: trim(raw.Quotes.EffectiveAt)},
 	}
 	for _, a := range raw.Actions {
@@ -173,4 +173,14 @@ func refusal(resp chatResponse) bool {
 	}
 	c := strings.ToLower(resp.Choices[0].Message.Content)
 	return strings.Contains(c, "чувствительные темы") || strings.Contains(c, "не обладает собственным мнением")
+}
+
+func splitTags(s string) []string {
+	var out []string
+	for _, t := range strings.Split(s, ",") {
+		if t = strings.TrimSpace(t); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }

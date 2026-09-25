@@ -65,8 +65,8 @@ func (d LawDraft) Validate(text string) error {
 		return errors.New("заголовок: без восклицаний и точки в конце")
 	}
 	for name, v := range map[string]string{"что изменилось": d.WhatChanged, "кого касается": d.WhoAffected} {
-		if n := utf8.RuneCountInString(v); n < 15 || n > 400 {
-			return fmt.Errorf("%s: %d знаков, нужно 15–400", name, n)
+		if n := utf8.RuneCountInString(v); n < 15 || n > 450 {
+			return fmt.Errorf("%s: %d знаков, нужно 15–450", name, n)
 		}
 	}
 	if len(d.Actions) > 4 {
