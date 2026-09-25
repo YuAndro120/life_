@@ -82,6 +82,14 @@ func (g *Ingester) Run(ctx context.Context, from time.Time, limit int) (Report, 
 		}
 		processed++
 		if err := g.one(ctx, d, &rep); err != nil {
+			if errors.Is(err, llm.ErrRefused) {
+				g.Log.Warn("модерация модели отказалась", "номер", d.Number)
+				rep.Rejected++
+				if err := g.Store.SaveRejected(ctx, d, "модерация GigaChat отказалась обрабатывать текст: разобрать вручную"); err != nil {
+					return rep, err
+				}
+				continue
+			}
 			if errors.Is(err, llm.ErrInvalid) || errors.Is(err, ErrNoText) || errors.Is(err, llm.ErrRateLimited) {
 				g.Log.Warn("закон пропущен", "номер", d.Number, "err", err)
 				rep.Failed++

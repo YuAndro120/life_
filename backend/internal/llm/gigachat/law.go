@@ -88,6 +88,9 @@ func (c *Client) ExtractLaw(ctx context.Context, in llm.LawInput) (llm.LawDraft,
 		total.PromptTokens += resp.Usage.PromptTokens
 		total.CompletionTokens += resp.Usage.CompletionTokens
 
+		if refusal(resp) {
+			return llm.LawDraft{}, total, llm.ErrRefused
+		}
 		d, err := parseLaw(resp)
 		if err == nil {
 			if err = d.Validate(in.Text); err == nil {
@@ -161,4 +164,13 @@ func rawAnswer(resp chatResponse) string {
 		s = string(r[:400]) + "…"
 	}
 	return s
+}
+
+// refusal — стандартный отказ модерации GigaChat: вместо вызова функции приходит текст про «чувствительные темы».
+func refusal(resp chatResponse) bool {
+	if len(resp.Choices) == 0 || resp.Choices[0].Message.FunctionCall != nil {
+		return false
+	}
+	c := strings.ToLower(resp.Choices[0].Message.Content)
+	return strings.Contains(c, "чувствительные темы") || strings.Contains(c, "не обладает собственным мнением")
 }
