@@ -62,6 +62,7 @@ enum FilterEngine {
         guard !p.stopTopics.contains(story.topic), p.infoTypes.contains(story.infoType) else { return false }
         guard p.countries.contains(story.countryCode) else { return false }
         guard !p.hiddenStories.contains(story.id) else { return false }
+        if p.stopTopics.contains(.politics), !p.interests.contains(story.topic), PoliticalMarkers.matches(story) { return false }
         if !story.sources.isEmpty, story.sources.allSatisfy({ p.mutedSources.contains($0.title) }) { return false }
         if p.onlyInterests, !p.interests.isEmpty, !p.interests.contains(story.topic) { return false }
         return true
