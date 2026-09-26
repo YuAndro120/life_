@@ -433,7 +433,9 @@ FROM (
     SELECT count(*)::int AS n, (count(DISTINCT p.source_id) FILTER (WHERE p.derived_from IS NULL))::int AS sources,
            bool_or(src.kind = 'gov') AS official, max(p.published_at) AS last_at,
            mode() WITHIN GROUP (ORDER BY src.country) AS country,
-           mode() WITHIN GROUP (ORDER BY src.region_code) AS region,
+           -- Регион сюжета — только если все его источники региональные и одного региона; иначе сюжет федеральный.
+           CASE WHEN count(*) FILTER (WHERE src.region_code IS NULL) = 0 AND count(DISTINCT src.region_code) = 1
+                THEN min(src.region_code) END AS region,
            mode() WITHIN GROUP (ORDER BY p.lang) AS lang
     FROM posts p JOIN sources src ON src.id = p.source_id
     WHERE p.story_id = $1

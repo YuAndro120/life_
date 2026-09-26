@@ -10,7 +10,8 @@ SELECT
     s.meaning,
     s.post_count,
     s.source_count,
-    COALESCE(s.source_region, s.region_code) AS region_code,
+    -- Регион отдаём только по источникам: регион, названный моделью, бывает ошибочным (федеральные новости с «Москвой» в тексте).
+    s.source_region AS region_code,
     s.country,
     s.lang,
     s.updated_at,
