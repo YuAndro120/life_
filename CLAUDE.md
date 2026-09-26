@@ -31,6 +31,9 @@ docker compose -f infra/docker-compose.dev.yml up -d
 cd backend && go run ./cmd/api
 go test ./...
 
+# веб (PWA)
+node --test web/test/ && node web/e2e/smoke.mjs
+
 # iOS
 xcodebuild -project ios/Shtil/Shtil.xcodeproj -scheme Shtil -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build test
 ```
