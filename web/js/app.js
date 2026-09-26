@@ -160,6 +160,24 @@ setInterval(() => { if (!document.hidden) render(true); }, 10 * 60 * 1000);
 if (navigator.storage?.persist) navigator.storage.persist().then((ok) => { ctx.local.persisted = ok; }).catch(() => {});
 if ('serviceWorker' in navigator && !isDev) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
+// iOS в режиме прозрачного статус-бара отдаёт странице окно на высоту статус-бара короче экрана (внизу остаётся пустая полоса).
+// Если нехватка равна верхней безопасной зоне, растягиваем рамку на весь экран.
+function fitFrame() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)';
+  document.body.append(probe);
+  const safeTop = parseFloat(getComputedStyle(probe).paddingTop) || 0;
+  probe.remove();
+  const portrait = innerHeight > innerWidth;
+  const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  const missing = full - innerHeight;
+  const stretch = portrait && safeTop > 0 && missing > 0 && missing <= safeTop + 2;
+  document.documentElement.style.setProperty('--frame-h', stretch ? `${full}px` : '100%');
+}
+fitFrame();
+window.addEventListener('resize', fitFrame);
+window.addEventListener('orientationchange', () => setTimeout(fitFrame, 300));
+
 installDebugPanel();
 render(false);
 refresh(true).then(() => render(true));
