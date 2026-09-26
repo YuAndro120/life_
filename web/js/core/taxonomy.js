@@ -46,9 +46,9 @@ export const occupationTitle = (id) => find(OCCUPATIONS, id);
 export const sellsTitle = (id) => find(SELLS, id);
 
 export const THEMES = [
-  { id: 'paper', title: 'Бумага', hint: 'Строгая газета' },
-  { id: 'sage', title: 'Шалфей', hint: 'Мягко и спокойно' },
-  { id: 'dusk', title: 'Сумерки', hint: 'Тёмная, для вечера' },
+  { id: 'paper', title: 'Бумага', hint: 'Собранно, как хорошая газета' },
+  { id: 'sage', title: 'Шалфей', hint: 'Мягко и спокойно, как утро' },
+  { id: 'dusk', title: 'Сумерки', hint: 'Тёмная, бережёт глаза вечером' },
 ];
 
 /** Профиль и настройки по умолчанию (как в iOS-приложении). */

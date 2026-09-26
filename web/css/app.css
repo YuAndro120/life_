@@ -187,10 +187,6 @@ textarea.field.big { min-height: 132px; background: var(--card); border-radius: 
 .welcome-lines { font-size: 32px; margin-top: 20px; } .welcome-lines .m { color: var(--muted); display: block; }
 .point { display: flex; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); } .point:first-child { border-top-color: var(--ink); } .point .n { color: var(--accent); }
 .footer { display: grid; gap: 2px; }
-.themes { display: grid; gap: 12px; margin-top: 24px; }
-.theme-card { width: 100%; display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 18px; border: 2px solid var(--line); }
-.theme-card[aria-pressed='true'] { border-color: var(--accent); }
-.swatch { width: 54px; height: 54px; border-radius: 14px; border: 1px solid #0002; flex: none; display: flex; align-items: flex-end; padding: 6px; font-weight: 700; font-size: 18px; }
 .build-num { font-family: var(--font-heading); font-size: 104px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; margin-top: 20px; font-variant-numeric: tabular-nums; }
 .build-steps { display: grid; gap: 10px; margin-top: 22px; } .build-step { display: flex; gap: 12px; align-items: center; color: var(--muted); opacity: 0.6; transition: opacity 0.3s; }
 .build-step.ok { opacity: 1; color: var(--ink); } .build-step .c { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
@@ -202,3 +198,21 @@ textarea.field.big { min-height: 132px; background: var(--card); border-radius: 
 .sheet .list-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 48px; font-size: 17px; border-bottom: 1px solid var(--line); }
 .toast { font-size: 14px; padding: 10px 14px; border-radius: 12px; background: var(--segment); margin-top: 12px; }
 .toast.err { color: #b3261e; } [data-theme='dusk'] .toast.err { color: #ffb4ab; }
+
+/* Выбор темы: три мини-макета, как в приложении */
+.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 24px; align-items: start; }
+.theme-opt { display: block; width: 100%; padding: 5px 5px 10px; border-radius: 22px; border: 2px solid transparent; }
+.theme-opt[aria-pressed='true'] { border-color: var(--accent); }
+.theme-opt .t { font-size: 15px; font-weight: 600; margin: 8px 5px 0; }
+.theme-opt .h { font-size: 12px; line-height: 1.35; color: var(--muted); margin: 6px 5px 0; }
+.theme-preview { height: 148px; padding: 12px 10px; border-radius: 16px; border: 1px solid; overflow: hidden; }
+
+/* Без полос прокрутки везде */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Статус-бар прозрачный (индикаторы iOS всегда белые), поэтому под ним своя заливка: тёмная у светлых тем, фон у «Сумерек» */
+:root, [data-theme='paper'], [data-theme='sage'] { --cap: #1e211f; }
+[data-theme='paper'] { --cap: #22211e; }
+[data-theme='dusk'] { --cap: var(--bg); }
+#statusbar { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--cap); z-index: 60; pointer-events: none; }

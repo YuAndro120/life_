@@ -2,15 +2,28 @@ import { h } from './dom.js';
 import { meta, rule, screenTitle, sectionTitle, sheet, switchRow, button } from './components.js';
 import { profileForm } from './profile-form.js';
 import { THEMES } from '../core/taxonomy.js';
+import { THEME_TOKENS } from '../theme.js';
 import { encryptBackup, decryptBackup, BackupError } from '../backup.js';
 
-const SWATCH = { paper: ['#f2f1ec', '#22211e'], sage: ['#edf0ea', '#2f6b4f'], dusk: ['#1c1d22', '#a9b3ff'] };
+/** Мини-макет темы: заголовок, плашка с карточкой и строки текста в её собственных цветах (как в iOS-приложении). */
+function themePreview(id) {
+  const t = THEME_TOKENS[id];
+  const bar = (width, height, color, opacity, extra = '') => h('div', { style: `width:${width}%;height:${height}px;border-radius:99px;background:${color};opacity:${opacity};${extra}` });
+  return h('div', { class: 'theme-preview', 'aria-hidden': 'true', style: `background:${t.bg};border-color:${t.dark ? '#3a3c46' : t.line}` },
+    bar(46, 9, t.ink, 1), bar(72, 5, t.muted, 0.6, 'margin-top:6px'),
+    h('div', { style: `margin-top:10px;padding:5px;border-radius:10px;background:${t.plate}` },
+      h('div', { style: `display:flex;align-items:center;gap:5px;height:30px;padding:0 7px;border-radius:7px;background:${t.card}` },
+        h('span', { style: `width:6px;height:6px;border-radius:50%;background:${t.accent};flex:none` }), h('div', { style: `flex:1;height:4px;border-radius:99px;background:${t.ink};opacity:0.55` }))),
+    bar(88, 5, t.ink, 0.5, 'margin-top:10px'), bar(60, 5, t.muted, 0.5, 'margin-top:6px'));
+}
 
+/** Выбор темы (три мини-макета) и «Сумерки по вечерам». */
 export function themePicker(ctx) {
   const { store } = ctx;
-  return h('div', { class: 'themes' }, THEMES.map((t) => h('button', { class: 'theme-card', type: 'button', 'aria-pressed': String(store.state.settings.theme === t.id), onClick: () => store.setSettings({ theme: t.id }) },
-    h('span', { class: 'swatch', style: `background:${SWATCH[t.id][0]};color:${SWATCH[t.id][1]}` }, 'Ш'),
-    h('span', null, h('div', { style: 'font-size:17px;font-weight:600' }, t.title), h('div', { class: 'meta' }, t.hint)))));
+  return h('div', { class: 'theme-picker' },
+    h('div', { class: 'theme-grid' }, THEMES.map((t) => h('button', { class: 'theme-opt', type: 'button', 'aria-pressed': String(store.state.settings.theme === t.id), onClick: () => store.setSettings({ theme: t.id }) },
+      themePreview(t.id), h('div', { class: 't' }, t.title), h('div', { class: 'h' }, t.hint)))),
+    h('div', { style: 'margin-top:14px' }, switchRow({ title: 'Сумерки по вечерам', hint: 'Тёмная тема сама включится после 19:00', on: store.state.settings.autoDusk, onChange: (v) => store.setSettings({ autoDusk: v }) })));
 }
 
 /** Резервная копия: зашифрованный код или файл; ключ выводится из пароля и нигде не хранится. */
@@ -68,8 +81,7 @@ export function profileScreen(ctx) {
     screenTitle('Профиль'),
     h('p', { class: 'lead' }, 'Покажем только те законы и изменения, которые касаются тебя.'),
     h('div', { style: 'margin-top:28px' }, profileForm(ctx)),
-    h('div', null, sectionTitle('09', 'Оформление', theme), h('div', { class: 'section-body' }, themePicker(ctx),
-      h('div', { style: 'margin-top:8px' }, switchRow({ title: 'Тёмная тема вечером', hint: 'С 19:00 до 6:00 включаются «Сумерки»', on: store.state.settings.autoDusk, onChange: (v) => store.setSettings({ autoDusk: v }) })))),
+    h('div', null, sectionTitle('09', 'Оформление', theme), h('div', { class: 'section-body' }, themePicker(ctx))),
     h('div', null, sectionTitle('10', 'Резервная копия', theme), h('div', { class: 'section-body' },
       h('p', { style: 'font-size:14px;line-height:1.5;color:var(--muted)' }, 'Браузер может стереть данные сайта, а при переустановке они пропадают. Сохраните зашифрованную копию профиля и фильтров: она открывается только вашим паролем и не уходит на сервер.'),
       h('div', { style: 'display:grid;gap:8px;margin-top:12px' }, button({ title: 'Сохранить копию', trailing: '', onClick: () => openBackupSheet(ctx, 'save') }),

@@ -82,9 +82,9 @@ try {
     await waitFor(`document.body.innerText.includes('Что тебе не показывать')`, 'что не показывать');
     await must('Дальше');
     await waitFor(`document.body.innerText.includes('Как будет выглядеть выпуск')`, 'тема');
-    await ev(`[...document.querySelectorAll('.theme-card')].find((c) => c.textContent.includes('Сумерки')).click()`);
+    await ev(`[...document.querySelectorAll('.theme-opt')].find((c) => c.textContent.includes('Сумерки')).click()`);
     assert.equal(await ev('document.documentElement.dataset.theme'), 'dusk');
-    await ev(`[...document.querySelectorAll('.theme-card')].find((c) => c.textContent.includes('Бумага')).click()`);
+    await ev(`[...document.querySelectorAll('.theme-opt')].find((c) => c.textContent.includes('Бумага')).click()`);
     await must('Собрать первый выпуск');
   });
   await step('сборка выпуска и открытие ленты', async () => {
