@@ -57,13 +57,17 @@ enum FilterEngine {
         return Edition(number: number, laws: relevantLaws, stories: stories, foldedHeavy: folded, interestIDs: interestIDs, stats: stats)
     }
 
-    /// Можно ли показывать сюжет при таких настройках: тема, тип, страна, скрытые пользователем сюжеты и источники, «только интересы».
+    /// Можно ли показывать сюжет при таких настройках: скрытые пользователем сюжеты, источники и слова, СВО, тема, тип, страна, «только интересы».
     static func isAllowed(_ story: Story, _ p: FilterPreferences) -> Bool {
+        guard !p.hiddenStories.contains(story.id) else { return false }
+        if !story.sources.isEmpty, story.sources.allSatisfy({ p.mutedSources.contains($0.title) }) { return false }
+        if WordFilter.matches(story, words: p.blockedWords) { return false }
+        // Единственное исключение из «всё про СВО скрыто»: официальное заявление об окончании СВО показываем всегда.
+        if p.hideWar, WarMarkers.isEndAnnouncement(story) { return true }
+        if p.hideWar, WarMarkers.matches(story) { return false }
         guard !p.stopTopics.contains(story.topic), p.infoTypes.contains(story.infoType) else { return false }
         guard p.countries.contains(story.countryCode) else { return false }
-        guard !p.hiddenStories.contains(story.id) else { return false }
         if p.stopTopics.contains(.politics), !p.interests.contains(story.topic), PoliticalMarkers.matches(story) { return false }
-        if !story.sources.isEmpty, story.sources.allSatisfy({ p.mutedSources.contains($0.title) }) { return false }
         if p.onlyInterests, !p.interests.isEmpty, !p.interests.contains(story.topic) { return false }
         return true
     }

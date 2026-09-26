@@ -26,6 +26,8 @@ final class FilterSettings {
     /// Идентификаторы скрытых сюжетов в порядке скрытия (хранятся последние 300).
     var hiddenStories: [String] = []
     var storyLimit: Int = 15
+    var hideWar: Bool = true
+    var blockedWords: [String] = []
 
     static let hiddenLimit = 300
 
@@ -45,6 +47,8 @@ final class FilterSettings {
                 onlyInterests: onlyInterests,
                 mutedSources: Set(mutedSources),
                 hiddenStories: Set(hiddenStories),
+                hideWar: hideWar,
+                blockedWords: blockedWords,
                 storyLimit: storyLimit
             )
         }
@@ -64,6 +68,8 @@ final class FilterSettings {
             let added = newValue.hiddenStories.subtracting(kept).sorted()
             hiddenStories = Array((kept + added).suffix(Self.hiddenLimit))
             storyLimit = newValue.storyLimit
+            hideWar = newValue.hideWar
+            blockedWords = newValue.blockedWords
         }
     }
 

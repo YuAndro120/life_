@@ -4,6 +4,7 @@ struct FiltersView: View {
     @Environment(\.theme) private var theme
     @Environment(AppModel.self) private var model
     @State private var showTopicPicker = false
+    @State private var newWord = ""
     @State private var editingTime: TimeSlot?
 
     enum TimeSlot: Identifiable { case morning, evening; var id: Self { self } }
@@ -100,6 +101,11 @@ struct FiltersView: View {
                 }
 
                 section("07", "Стоп-темы") {
+                    SwitchRow(
+                        title: "Скрывать всё про СВО",
+                        hint: "Кроме официального заявления, что СВО закончилась",
+                        isOn: $settings.hideWar
+                    )
                     FlowLayout(spacing: 8) {
                         ForEach(model.settings.preferences.stopTopics.sorted { $0.title < $1.title }, id: \.self) { topic in
                             Button { toggleStopTopic(topic) } label: {
@@ -125,11 +131,13 @@ struct FiltersView: View {
                     .padding(.top, isSage ? 0 : 16)
                 }
 
-                section("08", "Реклама") {
+                section("08", "Слова") { wordsSection }
+
+                section("09", "Реклама") {
                     SwitchRow(title: "Скрывать рекламные посты", hint: "По маркировке «Реклама» и erid", isOn: $settings.hideAds)
                 }
 
-                section("09", "Расписание") {
+                section("10", "Расписание") {
                     PillSegments(
                         options: [(SchedulePreference.both, "Утро и вечер"), (.am, "Только утро"), (.pm, "Только вечер")],
                         selection: scheduleBinding, fontSize: 13
@@ -141,7 +149,7 @@ struct FiltersView: View {
                 }
 
                 if hasHidden {
-                    section("10", "Скрытое") { hiddenSection }
+                    section("11", "Скрытое") { hiddenSection }
                 }
             }
             .padding(.horizontal, 20)
@@ -285,6 +293,62 @@ struct FiltersView: View {
         var p = model.settings.preferences
         p.storyLimit = min(40, max(3, n))
         model.settings.preferences = p
+    }
+
+    // MARK: слова
+
+    private func addWord() {
+        let word = WordFilter.normalize(newWord)
+        newWord = ""
+        var p = model.settings.preferences
+        guard !word.isEmpty, !p.blockedWords.contains(word), p.blockedWords.count < WordFilter.maxWords else { return }
+        p.blockedWords.append(word)
+        model.settings.preferences = p
+    }
+
+    @ViewBuilder private var wordsSection: some View {
+        Text("Сюжеты с этими словами в заголовке или пересказе скрываются. Форму слова учитываем: «футбол» найдёт и «футболист».")
+            .font(theme.fonts.body(13)).foregroundStyle(theme.muted).lineSpacing(3)
+            .padding(.top, isSage ? 0 : 12)
+        HStack(spacing: 10) {
+            TextField("Слово или фраза", text: $newWord)
+                .font(theme.fonts.body(16)).foregroundStyle(theme.ink)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .submitLabel(.done).onSubmit(addWord)
+                .padding(.horizontal, 14).frame(minHeight: 46)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(theme.chipBg))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(theme.chipBorder, lineWidth: 1))
+            Button(action: addWord) {
+                Text("Добавить").font(theme.fonts.body(15, .medium)).foregroundStyle(theme.accent).frame(minHeight: 46)
+            }
+            .buttonStyle(.plain)
+            .disabled(WordFilter.normalize(newWord).isEmpty)
+        }
+        .padding(.top, 12)
+        let words = model.settings.preferences.blockedWords
+        if !words.isEmpty {
+            FlowLayout(spacing: 8) {
+                ForEach(words, id: \.self) { word in
+                    Button {
+                        var p = model.settings.preferences
+                        p.blockedWords.removeAll { $0 == word }
+                        model.settings.preferences = p
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text(word)
+                            Text("×").foregroundStyle(theme.muted)
+                        }
+                        .font(theme.fonts.body(15, .medium)).foregroundStyle(theme.ink)
+                        .padding(.leading, 14).padding(.trailing, 12).frame(minHeight: 44)
+                        .background(Capsule().fill(theme.chipBg))
+                        .overlay(Capsule().strokeBorder(theme.chipBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Убрать слово \(word)")
+                }
+            }
+            .padding(.top, 12)
+        }
     }
 
     private var hasHidden: Bool {

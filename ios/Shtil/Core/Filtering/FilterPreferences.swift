@@ -23,6 +23,10 @@ struct FilterPreferences: Equatable, Sendable {
     var mutedSources: Set<String> = []
     /// Сюжеты, скрытые пользователем.
     var hiddenStories: Set<String> = []
+    /// Скрывать всё про СВО (кроме официального заявления об окончании). По умолчанию включено.
+    var hideWar: Bool = true
+    /// Слова и фразы пользователя: сюжеты с ними скрываются.
+    var blockedWords: [String] = []
     /// Сколько сюжетов показывать в выпуске (выпуск можно дочитать до конца).
     var storyLimit: Int = 15
 
