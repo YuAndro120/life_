@@ -45,7 +45,10 @@ enum AudienceMatcher {
             let mine = tags.filter { $0.hasPrefix(prefix) }
             if !lawSpecific.isEmpty, !mine.isEmpty, lawSpecific.isDisjoint(with: mine) { return false }
         }
-        return lawTags.contains(allTag) || !lawTags.isDisjoint(with: tags)
+        // Тег «all» решает, только когда других тегов у закона нет: модель ставит его вместе с конкретными, и тогда важнее они.
+        let specific = lawTags.subtracting([allTag])
+        if specific.isEmpty { return lawTags.contains(allTag) }
+        return !specific.isDisjoint(with: tags)
     }
 
     /// Законы про пользователя, по возрастанию даты вступления в силу (без даты — в конце).

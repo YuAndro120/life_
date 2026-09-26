@@ -152,4 +152,11 @@ import Testing
         #expect(matches(["work:ip", "sells:services"], profile: seller))
         #expect(matches(["work:ip"], profile: seller))
     }
+
+    @Test func allTagDoesNotOverrideSpecificTags() {
+        let p = UserProfile(work: [.employee])
+        #expect(!matches(["all", "housing:mortgage"], profile: p))
+        #expect(matches(["all", "work:employee"], profile: p))
+        #expect(matches(["all"], profile: p))
+    }
 }
