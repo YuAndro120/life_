@@ -50,6 +50,7 @@ func main() {
 func run(cmd string, args []string) error {
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	since := fs.String("since", time.Now().AddDate(0, -3, 0).Format("2006-01-02"), "подписаны не раньше этой даты (fetch)")
+	only := fs.String("only", "", "retag: только законы с этими номерами через запятую, например 332-ФЗ,328-ФЗ")
 	yes := fs.Bool("yes", false, "подтвердить без вопросов (approve-regional)")
 	limit := fs.Int("limit", 30, "сколько новых законов обработать за запуск (fetch)")
 	model := fs.String("model", "", "модель для разбора законов (по умолчанию из окружения провайдера)")
@@ -72,7 +73,7 @@ func run(cmd string, args []string) error {
 	case "fetch":
 		return fetch(ctx, store, *since, *limit, *model)
 	case "retag":
-		return retag(ctx, store, *model)
+		return retag(ctx, store, *model, *only)
 	case "fetch-regional":
 		from, err := time.Parse("2006-01-02", *since)
 		if err != nil {
@@ -264,7 +265,7 @@ func nonNil(s []string) []string {
 
 // retag заново разбирает тексты подтверждённых законов и обновляет только теги аудитории (например, после расширения набора тегов).
 // Название, «что изменилось» и «кого касается», подтверждённые человеком, не трогаются; разница печатается.
-func retag(ctx context.Context, store *legal.PGStore, modelName string) error {
+func retag(ctx context.Context, store *legal.PGStore, modelName, only string) error {
 	_, extractor, name, err := factory.New(slog.Default(), modelName)
 	if err != nil {
 		return err
@@ -282,6 +283,9 @@ func retag(ctx context.Context, store *legal.PGStore, modelName string) error {
 	changed, failed := 0, 0
 	var prompt, completion int
 	for _, r := range rows {
+		if only != "" && !containsAny(r.ActNumber.String, strings.Split(only, ",")) {
+			continue
+		}
 		doc := legal.Doc{
 			EONumber: r.EoNumber.String, Number: strings.TrimPrefix(r.ActNumber.String, "№ "), Signed: r.SignedAt.Time, Title: r.Title,
 		}
@@ -326,4 +330,13 @@ func sameTags(a, b []string) bool {
 	sort.Strings(x)
 	sort.Strings(y)
 	return strings.Join(x, ",") == strings.Join(y, ",")
+}
+
+func containsAny(s string, parts []string) bool {
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" && strings.Contains(s, p) {
+			return true
+		}
+	}
+	return false
 }

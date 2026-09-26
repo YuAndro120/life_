@@ -127,3 +127,29 @@ import Testing
         #expect(ProfileSummary.line(profile: p, preferences: prefs) == nil)
     }
 }
+
+@Suite struct AudienceGatingTests {
+    private func matches(_ tags: [String], profile: UserProfile) -> Bool {
+        let law = TestData.law("l", tags: tags)
+        return AudienceMatcher.matches(law, tags: AudienceMatcher.audienceTags(for: profile), regionCode: profile.regionCode)
+    }
+
+    @Test func industryMustMatchWhenProfileAnswered() {
+        let it = UserProfile(work: [.employee], occupations: [.it])
+        #expect(!matches(["work:employee", "industry:health"], profile: it))
+        #expect(matches(["work:employee", "industry:it"], profile: it))
+        #expect(matches(["work:employee"], profile: it))
+    }
+
+    @Test func unansweredProfileIsNotGated() {
+        let plain = UserProfile(work: [.employee])
+        #expect(matches(["work:employee", "industry:health"], profile: plain))
+    }
+
+    @Test func sellsMustMatchWhenProfileAnswered() {
+        let seller = UserProfile(work: [.ip], sells: [.services])
+        #expect(!matches(["work:ip", "sells:alcohol"], profile: seller))
+        #expect(matches(["work:ip", "sells:services"], profile: seller))
+        #expect(matches(["work:ip"], profile: seller))
+    }
+}

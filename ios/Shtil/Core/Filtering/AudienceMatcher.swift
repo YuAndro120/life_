@@ -38,6 +38,13 @@ enum AudienceMatcher {
     static func matches(_ law: Law, tags: Set<String>, regionCode: String?) -> Bool {
         if let lawRegion = law.regionCode, lawRegion != regionCode { return false }
         let lawTags = Set(law.audienceTags)
+        // Отрасль и товары уточняют выбор: если закон про конкретную отрасль или торговлю, а человек эти ответы дал,
+        // они должны совпасть. Если ответов нет, не отсекаем: лучше показать лишнее, чем пропустить нужное.
+        for prefix in ["industry:", "sells:"] {
+            let lawSpecific = lawTags.filter { $0.hasPrefix(prefix) }
+            let mine = tags.filter { $0.hasPrefix(prefix) }
+            if !lawSpecific.isEmpty, !mine.isEmpty, lawSpecific.isDisjoint(with: mine) { return false }
+        }
         return lawTags.contains(allTag) || !lawTags.isDisjoint(with: tags)
     }
 
