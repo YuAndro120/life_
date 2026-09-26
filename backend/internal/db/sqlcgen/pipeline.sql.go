@@ -56,6 +56,15 @@ func (q *Queries) AttachStoryPost(ctx context.Context, arg AttachStoryPostParams
 	return err
 }
 
+const clearStoryDerived = `-- name: ClearStoryDerived :exec
+UPDATE posts SET derived_from = NULL WHERE story_id = $1 AND derived_from IS NOT NULL
+`
+
+func (q *Queries) ClearStoryDerived(ctx context.Context, storyID pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, clearStoryDerived, storyID)
+	return err
+}
+
 const createStory = `-- name: CreateStory :one
 INSERT INTO stories (first_seen_at, updated_at, last_post_at, post_count, source_count, has_official_source, status)
 VALUES ($1, $2, $2, 0, 0, false, 'draft')
@@ -160,6 +169,30 @@ func (q *Queries) ListRecentPosts(ctx context.Context, since pgtype.Timestamptz)
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRecentStoryIDs = `-- name: ListRecentStoryIDs :many
+SELECT id FROM stories WHERE status IN ('draft', 'published') AND first_seen_at > $1::timestamptz ORDER BY id
+`
+
+func (q *Queries) ListRecentStoryIDs(ctx context.Context, since pgtype.Timestamptz) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listRecentStoryIDs, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -273,6 +306,42 @@ func (q *Queries) ListStoryPostsForDigest(ctx context.Context, arg ListStoryPost
 	return items, nil
 }
 
+const listStoryPostsForOriginality = `-- name: ListStoryPostsForOriginality :many
+SELECT id, source_id, published_at, text FROM posts WHERE story_id = $1
+`
+
+type ListStoryPostsForOriginalityRow struct {
+	ID          int64
+	SourceID    int64
+	PublishedAt pgtype.Timestamptz
+	Text        string
+}
+
+func (q *Queries) ListStoryPostsForOriginality(ctx context.Context, storyID pgtype.Int8) ([]ListStoryPostsForOriginalityRow, error) {
+	rows, err := q.db.Query(ctx, listStoryPostsForOriginality, storyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStoryPostsForOriginalityRow
+	for rows.Next() {
+		var i ListStoryPostsForOriginalityRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SourceID,
+			&i.PublishedAt,
+			&i.Text,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUnclusteredPosts = `-- name: ListUnclusteredPosts :many
 SELECT p.id, p.source_id, p.url, p.published_at, p.text, p.lang, s.title AS source_title, s.kind AS source_kind
 FROM posts p
@@ -360,7 +429,7 @@ UPDATE stories s SET
     lang = COALESCE(c.lang, s.lang),
     updated_at = GREATEST(s.updated_at, c.last_at)
 FROM (
-    SELECT count(*)::int AS n, count(DISTINCT p.source_id)::int AS sources,
+    SELECT count(*)::int AS n, (count(DISTINCT p.source_id) FILTER (WHERE p.derived_from IS NULL))::int AS sources,
            bool_or(src.kind = 'gov') AS official, max(p.published_at) AS last_at,
            mode() WITHIN GROUP (ORDER BY src.country) AS country,
            mode() WITHIN GROUP (ORDER BY p.lang) AS lang
@@ -371,6 +440,7 @@ WHERE s.id = $1
 `
 
 // Пересчёт счётчиков сюжета по его постам. Время обновления сдвигается только вперёд.
+// source_count — число НЕЗАВИСИМЫХ источников: посты-пересказы (derived_from) не считаются.
 func (q *Queries) RecountStory(ctx context.Context, storyID int64) error {
 	_, err := q.db.Exec(ctx, recountStory, storyID)
 	return err
@@ -412,6 +482,20 @@ func (q *Queries) SaveStoryDigest(ctx context.Context, arg SaveStoryDigestParams
 		arg.Newsworthy,
 		arg.ID,
 	)
+	return err
+}
+
+const setPostDerived = `-- name: SetPostDerived :exec
+UPDATE posts SET derived_from = $1 WHERE id = $2
+`
+
+type SetPostDerivedParams struct {
+	DerivedFrom pgtype.Int8
+	PostID      int64
+}
+
+func (q *Queries) SetPostDerived(ctx context.Context, arg SetPostDerivedParams) error {
+	_, err := q.db.Exec(ctx, setPostDerived, arg.DerivedFrom, arg.PostID)
 	return err
 }
 

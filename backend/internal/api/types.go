@@ -9,6 +9,8 @@ import (
 type Source struct {
 	Title string `json:"title"`
 	URL   string `json:"url"`
+	// Reprint — источник пересказывает более ранний пост другого источника, а не сообщает независимо.
+	Reprint bool `json:"reprint"`
 }
 
 type Story struct {

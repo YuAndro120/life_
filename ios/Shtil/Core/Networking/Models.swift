@@ -5,6 +5,26 @@ import Foundation
 struct SourceLink: Codable, Hashable, Sendable {
     let title: String
     let url: URL
+    /// Источник пересказывает более ранний пост другого источника, а не сообщает независимо. Старые ответы сервера поля не содержат.
+    var isReprint: Bool = false
+
+    init(title: String, url: URL, isReprint: Bool = false) {
+        self.title = title
+        self.url = url
+        self.isReprint = isReprint
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, url
+        case isReprint = "reprint"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = try c.decode(String.self, forKey: .title)
+        url = try c.decode(URL.self, forKey: .url)
+        isReprint = try c.decodeIfPresent(Bool.self, forKey: .isReprint) ?? false
+    }
 }
 
 struct Story: Codable, Hashable, Identifiable, Sendable {

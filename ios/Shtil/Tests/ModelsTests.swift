@@ -44,4 +44,11 @@ import Testing
         #expect(CalendarDate(year: 2026, month: 10, day: 1).adding(days: -1) == CalendarDate(year: 2026, month: 9, day: 30))
         #expect(today < CalendarDate(year: 2026, month: 10, day: 1))
     }
+
+    @Test func sourceLinkDecodesReprintFlagAndToleratesItsAbsence() throws {
+        let old = #"{"title":"ТАСС","url":"https://example.org/a"}"#.data(using: .utf8)!
+        let new = #"{"title":"Лента","url":"https://example.org/b","reprint":true}"#.data(using: .utf8)!
+        #expect(try JSONDecoder().decode(SourceLink.self, from: old).isReprint == false)
+        #expect(try JSONDecoder().decode(SourceLink.self, from: new).isReprint == true)
+    }
 }

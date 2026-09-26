@@ -53,6 +53,7 @@ type Post struct {
 	StoryID     pgtype.Int8
 	CreatedAt   pgtype.Timestamptz
 	AdSuspected bool
+	DerivedFrom pgtype.Int8
 }
 
 type Source struct {

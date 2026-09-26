@@ -27,6 +27,7 @@ INSERT INTO story_posts (story_id, post_id) VALUES (@story_id, @post_id) ON CONF
 
 -- name: RecountStory :exec
 -- Пересчёт счётчиков сюжета по его постам. Время обновления сдвигается только вперёд.
+-- source_count — число НЕЗАВИСИМЫХ источников: посты-пересказы (derived_from) не считаются.
 UPDATE stories s SET
     post_count = c.n,
     source_count = c.sources,
@@ -36,7 +37,7 @@ UPDATE stories s SET
     lang = COALESCE(c.lang, s.lang),
     updated_at = GREATEST(s.updated_at, c.last_at)
 FROM (
-    SELECT count(*)::int AS n, count(DISTINCT p.source_id)::int AS sources,
+    SELECT count(*)::int AS n, (count(DISTINCT p.source_id) FILTER (WHERE p.derived_from IS NULL))::int AS sources,
            bool_or(src.kind = 'gov') AS official, max(p.published_at) AS last_at,
            mode() WITHIN GROUP (ORDER BY src.country) AS country,
            mode() WITHIN GROUP (ORDER BY p.lang) AS lang
@@ -103,3 +104,15 @@ SELECT COALESCE(sum(prompt_tokens + completion_tokens), 0)::bigint FROM llm_usag
 INSERT INTO llm_usage (day, prompt_tokens, completion_tokens) VALUES (@day::date, @prompt::bigint, @completion::bigint)
 ON CONFLICT (day) DO UPDATE SET prompt_tokens = llm_usage.prompt_tokens + EXCLUDED.prompt_tokens,
                                 completion_tokens = llm_usage.completion_tokens + EXCLUDED.completion_tokens;
+
+-- name: ListStoryPostsForOriginality :many
+SELECT id, source_id, published_at, text FROM posts WHERE story_id = @story_id;
+
+-- name: ClearStoryDerived :exec
+UPDATE posts SET derived_from = NULL WHERE story_id = @story_id AND derived_from IS NOT NULL;
+
+-- name: SetPostDerived :exec
+UPDATE posts SET derived_from = @derived_from WHERE id = @post_id;
+
+-- name: ListRecentStoryIDs :many
+SELECT id FROM stories WHERE status IN ('draft', 'published') AND first_seen_at > @since::timestamptz ORDER BY id;

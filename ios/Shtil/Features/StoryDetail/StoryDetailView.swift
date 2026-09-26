@@ -94,11 +94,16 @@ struct StoryDetailView: View {
         if !story.sources.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 Text(isSage ? "Читать полностью" : "ЧИТАТЬ ПОЛНОСТЬЮ").metaStyle().padding(.top, 24).padding(.bottom, 6)
-                ForEach(story.sources, id: \.url) { source in
+                ForEach(Array(story.sources.enumerated()), id: \.element.url) { index, source in
                     Rule()
                     Link(destination: source.url) {
                         HStack {
-                            Text(source.title).font(theme.fonts.body(16, .medium)).foregroundStyle(theme.ink)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(source.title).font(theme.fonts.body(16, .medium)).foregroundStyle(theme.ink)
+                                if let note = note(for: source, at: index) {
+                                    Text(note).font(theme.fonts.body(12)).foregroundStyle(theme.muted)
+                                }
+                            }
                             Spacer(minLength: 8)
                             Text("↗").foregroundStyle(theme.muted)
                         }
@@ -109,6 +114,13 @@ struct StoryDetailView: View {
                 Rule()
             }
         }
+    }
+
+    /// Подпись под источником: где искать оригинал, а где пересказ. Сервер отдаёт первоисточники первыми.
+    private func note(for source: SourceLink, at index: Int) -> String? {
+        if source.isReprint { return "пересказывает более раннее сообщение" }
+        guard story.sources.count > 1 else { return nil }
+        return index == 0 ? "первоисточник" : "сообщил независимо"
     }
 
     private var feedback: some View {

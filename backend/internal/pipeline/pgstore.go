@@ -10,6 +10,7 @@ import (
 	"shtil/backend/internal/cluster"
 	"shtil/backend/internal/db/sqlcgen"
 	"shtil/backend/internal/llm"
+	"shtil/backend/internal/originality"
 )
 
 type PGStore struct{ q *sqlcgen.Queries }
@@ -65,8 +66,39 @@ func (s *PGStore) AttachPost(ctx context.Context, storyID, postID int64) error {
 	return s.q.AttachStoryPost(ctx, sqlcgen.AttachStoryPostParams{StoryID: storyID, PostID: postID})
 }
 
+// Recount находит в сюжете посты-пересказы (originality), затем пересчитывает счётчики по независимым источникам.
 func (s *PGStore) Recount(ctx context.Context, storyID int64) error {
+	rows, err := s.q.ListStoryPostsForOriginality(ctx, pgtype.Int8{Int64: storyID, Valid: true})
+	if err != nil {
+		return err
+	}
+	posts := make([]originality.Post, len(rows))
+	for i, r := range rows {
+		posts[i] = originality.Post{ID: r.ID, SourceID: r.SourceID, At: r.PublishedAt.Time, Text: r.Text}
+	}
+	if err := s.q.ClearStoryDerived(ctx, pgtype.Int8{Int64: storyID, Valid: true}); err != nil {
+		return err
+	}
+	for postID, from := range originality.DerivedFrom(posts) {
+		if err := s.q.SetPostDerived(ctx, sqlcgen.SetPostDerivedParams{PostID: postID, DerivedFrom: pgtype.Int8{Int64: from, Valid: true}}); err != nil {
+			return err
+		}
+	}
 	return s.q.RecountStory(ctx, storyID)
+}
+
+// RecountRecent пересчитывает независимость источников у сюжетов, созданных не раньше since (для уже накопленных данных).
+func (s *PGStore) RecountRecent(ctx context.Context, since time.Time) (int, error) {
+	ids, err := s.q.ListRecentStoryIDs(ctx, ts(since))
+	if err != nil {
+		return 0, err
+	}
+	for _, id := range ids {
+		if err := s.Recount(ctx, id); err != nil {
+			return 0, err
+		}
+	}
+	return len(ids), nil
 }
 
 func (s *PGStore) StoriesForDigest(ctx context.Context, quietBefore time.Time, maxAttempts, batch int) ([]DigestCandidate, error) {

@@ -42,8 +42,14 @@ func TestFeedFromSeededDB(t *testing.T) {
 		t.Errorf("posts_total %d меньше ads_hidden %d", feed.Stats.PostsTotal, feed.Stats.AdsHidden)
 	}
 	for i, st := range feed.Stories {
-		if len(st.Sources) == 0 || len(st.Sources) != st.SourceCount {
-			t.Errorf("сюжет %s: источников %d, source_count %d", st.ID, len(st.Sources), st.SourceCount)
+		independent := 0
+		for _, src := range st.Sources {
+			if !src.Reprint {
+				independent++
+			}
+		}
+		if len(st.Sources) == 0 || independent != st.SourceCount {
+			t.Errorf("сюжет %s: независимых источников %d, source_count %d", st.ID, independent, st.SourceCount)
 		}
 		if i > 0 && st.UpdatedAt.After(feed.Stories[i-1].UpdatedAt) {
 			t.Errorf("сюжеты не по убыванию updated_at на позиции %d", i)

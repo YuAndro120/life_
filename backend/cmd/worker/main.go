@@ -2,6 +2,7 @@
 //
 //	worker once            — один проход: склейка, пересказ моделью, публикация
 //	worker run             — бесконечный цикл (каждые -interval)
+//	worker reindex         — пересчитать независимые источники у сюжетов за последние 7 дней (после смены правил)
 //	worker debug-clusters  — показать, как склеились бы посты за последние -hours (только чтение, для подбора порога)
 //
 // Ключ GigaChat берётся только из переменной окружения GIGACHAT_AUTH_KEY.
@@ -66,6 +67,11 @@ func run(cmd string, interval time.Duration, threshold float64, window time.Dura
 	clusterCfg := cluster.DefaultConfig()
 	clusterCfg.Threshold, clusterCfg.Window = threshold, window
 
+	if cmd == "reindex" {
+		n, err := store.RecountRecent(ctx, time.Now().AddDate(0, 0, -7))
+		slog.Info("независимость источников пересчитана", "сюжетов", n)
+		return err
+	}
 	if cmd == "debug-clusters" {
 		return debugClusters(ctx, store, clusterCfg, hours)
 	}
