@@ -26,7 +26,7 @@ const privacy = (text) => h('div', { style: 'display:flex;gap:10px;align-items:f
 
 export function onboardingScreen(ctx) {
   const local = (ctx.local.onb ??= { step: 'welcome', about: '', dismissed: new Set() });
-  const go = (step) => { local.step = step; ctx.rerender(); window.scrollTo(0, 0); };
+  const go = (step) => { local.step = step; ctx.rerender(); document.getElementById('scroll')?.scrollTo(0, 0); };
   const skip = () => { ctx.store.completeOnboarding(); ctx.nav('/'); };
   switch (local.step) {
     case 'about': return aboutStep(ctx, local, go, skip);

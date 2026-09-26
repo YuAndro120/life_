@@ -27,7 +27,6 @@ if (isDev && params.get('demo')) {
   store.completeOnboarding();
 }
 const appEl = document.getElementById('app');
-const tabsEl = document.getElementById('tabs');
 const undoEl = document.getElementById('undo');
 const REFRESH_AFTER_MS = 5 * 60 * 1000;
 let lastRefresh = 0;
@@ -49,11 +48,8 @@ function currentRoute() {
   return { path, name, param: decodeURIComponent(param) };
 }
 
-function renderTabs(active) {
-  clear(tabsEl);
-  tabsEl.hidden = false;
-  tabsEl.append(h('nav', { 'aria-label': 'Разделы' }, TABS.map(([path, title]) => h('a', { href: `#${path}`, 'aria-current': path === active ? 'page' : null }, title))));
-}
+const tabsBar = (active) => h('div', { class: 'bar tabs' }, h('div', { class: 'col tabbar' },
+  h('nav', { 'aria-label': 'Разделы' }, TABS.map(([path, title]) => h('a', { href: `#${path}`, 'aria-current': path === active ? 'page' : null }, title)))));
 
 function applyTheme() {
   const now = ctx.now();
@@ -68,7 +64,6 @@ function render(keepScroll = false) {
   applyTheme();
   const route = currentRoute();
   const onboarding = !store.state.profile.onboardingCompleted;
-  const scrollY = window.scrollY;
   let screen;
   let tab = null;
   try {
@@ -89,11 +84,17 @@ function render(keepScroll = false) {
     console.error(error);
     screen = h('section', { class: 'screen' }, h('div', { class: 'empty' }, 'Что-то пошло не так. Обновите страницу.'));
   }
+  // Каркас: прокручивается только внутренняя область; нижняя панель (кнопки шага или вкладки) стоит на месте.
+  const footer = screen.querySelector(':scope > .footer');
+  footer?.remove();
+  const scroller = h('div', { class: 'scroll', id: 'scroll' }, h('div', { class: 'col' }, screen));
+  const bar = footer ? h('div', { class: 'bar' }, h('div', { class: 'col' }, footer)) : tab !== null ? tabsBar(tab) : null;
+  const previous = document.getElementById('scroll');
+  const keep = keepScroll && lastPath === route.path && previous ? previous.scrollTop : 0;
   clear(appEl);
-  appEl.append(screen);
-  appEl.classList.toggle('no-tabs', tab === null);
-  if (tab === null) tabsEl.hidden = true; else renderTabs(tab);
-  window.scrollTo(0, keepScroll && lastPath === route.path ? scrollY : 0);
+  appEl.append(scroller);
+  if (bar) appEl.append(bar);
+  scroller.scrollTop = keep;
   lastPath = route.path;
   renderUndo();
 }
