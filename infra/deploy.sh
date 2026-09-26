@@ -14,7 +14,7 @@ echo "== версия $VERSION, сервер $HOST"
 cd "$ROOT/backend"
 for target in api collector worker migrate seed lawtool; do
   echo "-- сборка shtil/$target"
-  docker buildx build --platform linux/amd64 --target "$target" -t "shtil/$target:$VERSION" --load . >/dev/null
+  docker buildx build --platform linux/amd64 --build-context web=../web --target "$target" -t "shtil/$target:$VERSION" --load . >/dev/null
 done
 
 echo "== загрузка образов на сервер"

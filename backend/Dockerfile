@@ -18,6 +18,10 @@ RUN go install github.com/pressly/goose/v3/cmd/goose@v3.28.0 && cp /go/bin/${TAR
 
 FROM gcr.io/distroless/static-debian12:nonroot AS api
 COPY --from=build /out/api /app/api
+# Веб-приложение (PWA) раздаёт тот же сервис. Каталог web/ лежит вне контекста сборки и подключается именованным контекстом:
+#   docker buildx build --build-context web=../web --target api …
+COPY --from=web . /app/web
+ENV WEB_DIR=/app/web
 USER nonroot:nonroot
 EXPOSE 8080
 ENTRYPOINT ["/app/api"]

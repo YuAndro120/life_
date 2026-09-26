@@ -17,8 +17,9 @@ const (
 )
 
 type Server struct {
-	store api.Store
-	now   func() time.Time
+	store  api.Store
+	now    func() time.Time
+	webDir string // каталог веб-приложения; пусто — только API
 }
 
 func NewServer(store api.Store) *Server {
@@ -31,6 +32,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/health", s.health)
 	mux.Handle("GET /v1/feed", cached(http.HandlerFunc(s.feed)))
 	mux.Handle("GET /v1/laws", cached(http.HandlerFunc(s.laws)))
+	if s.webDir != "" {
+		mux.Handle("GET /", s.web())
+	}
 	return mux
 }
 

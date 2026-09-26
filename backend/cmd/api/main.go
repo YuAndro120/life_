@@ -41,7 +41,7 @@ func run() error {
 	}
 	defer pool.Close()
 
-	srv := httpapi.NewHTTPServer(cfg.APIAddr, httpapi.NewServer(store.New(pool)).Handler())
+	srv := httpapi.NewHTTPServer(cfg.APIAddr, httpapi.NewServer(store.New(pool)).WithWeb(os.Getenv("WEB_DIR")).Handler())
 	errCh := make(chan error, 1)
 	go func() {
 		slog.Info("api listening", "addr", cfg.APIAddr)
