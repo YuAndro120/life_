@@ -13,6 +13,7 @@ import { profileScreen } from './ui/profile.js';
 import { onboardingScreen } from './ui/onboarding.js';
 import { installScreen } from './ui/install.js';
 import { isStandalone } from './platform.js';
+import { installDebugPanel } from './debug.js';
 
 const memoryStorage = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
 function pickStorage() {
@@ -159,5 +160,6 @@ setInterval(() => { if (!document.hidden) render(true); }, 10 * 60 * 1000);
 if (navigator.storage?.persist) navigator.storage.persist().then((ok) => { ctx.local.persisted = ok; }).catch(() => {});
 if ('serviceWorker' in navigator && !isDev) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
+installDebugPanel();
 render(false);
 refresh(true).then(() => render(true));
