@@ -12,8 +12,10 @@
 #
 # Проверка 25.09.2026 (legal_checked: 2026-09-25) выполнена по: (1) списку нежелательных организаций
 # (версия от 28.08.2026, 393 записи) и (2) списку иноагентов / СМИ-иноагентов; названия изданий в них не найдены.
-# Ограничение проверки: официальные файлы Минюста (XLS) автоматически не скачивались, использованы их
-# публикации; для юридически значимых решений проверьте на minjust.gov.ru.
+# Перечень нежелательных организаций проверен по официальной выгрузке Минюста от 23.09.2026 (418 записей, файл export.xlsx,
+# sha256 ca599ca6…): ни один источник каталога, включая региональные, в нём не найден.
+# Реестр иноагентов по официальному файлу не сверялся (для него использованы публикации); для юридически значимых решений
+# проверьте на minjust.gov.ru.
 sources:
   # --- Государственные органы: официальные сайты (Россия) ---
   - {kind: gov, handle: cbr, url: "https://www.cbr.ru/rss/RssNews", title: Банк России, topic_hint: economy, country: RU, active: true, legal_checked: 2026-09-25, note: "Официальный сайт государственного органа."}
@@ -67,9 +69,9 @@ sources:
   - {kind: rss, handle: tatar_inform, url: "https://www.tatar-inform.ru/rss", title: Татар-информ, country: RU, region: "16", active: true, legal_checked: 2026-09-26, note: "Государственное информационное агентство Республики Татарстан."}
   # Коммерческие городские издания: ленты работают, но проверка по реестрам вручную не выполнена, поэтому выключены.
   # Чтобы включить: проверьте название на minjust.gov.ru (иноагенты) и в реестре нежелательных организаций, затем поставьте active: true и legal_checked.
-  - {kind: rss, handle: ura_news, url: "https://ura.news/rss", title: URA.RU, country: RU, region: "66", active: false, note: "Свердловская область и Урал. Ждёт ручной проверки по реестрам."}
-  - {kind: rss, handle: r63, url: "https://63.ru/rss/", title: 63.ру, country: RU, region: "63", active: false, note: "Самара. Ждёт ручной проверки по реестрам."}
-  - {kind: rss, handle: r74, url: "https://74.ru/rss/", title: 74.ру, country: RU, region: "74", active: false, note: "Челябинск. Ждёт ручной проверки по реестрам."}
-  - {kind: rss, handle: kubantoday, url: "https://kubantoday.ru/rss/", title: Кубань Сегодня, country: RU, region: "23", active: false, note: "Краснодарский край. Ждёт ручной проверки по реестрам."}
-  - {kind: rss, handle: kubnews, url: "https://kubnews.ru/rss/", title: Кубанские новости, country: RU, region: "23", active: false, note: "Краснодарский край. Ждёт ручной проверки по реестрам."}
-  - {kind: rss, handle: todaykhv, url: "https://todaykhv.ru/rss/", title: Хабаровск сегодня, country: RU, region: "27", active: false, note: "Хабаровский край. Ждёт ручной проверки по реестрам."}
+  - {kind: rss, handle: ura_news, url: "https://ura.news/rss", title: URA.RU, country: RU, region: "66", active: false, note: "Свердловская область и Урал. В перечне нежелательных организаций не найден (23.09.2026); реестр иноагентов проверить вручную."}
+  - {kind: rss, handle: r63, url: "https://63.ru/rss/", title: 63.ру, country: RU, region: "63", active: false, note: "Самара. В перечне нежелательных организаций не найден (23.09.2026); реестр иноагентов проверить вручную."}
+  - {kind: rss, handle: r74, url: "https://74.ru/rss/", title: 74.ру, country: RU, region: "74", active: false, note: "Челябинск. В перечне нежелательных организаций не найден (23.09.2026); реестр иноагентов проверить вручную."}
+  - {kind: rss, handle: kubantoday, url: "https://kubantoday.ru/rss/", title: Кубань Сегодня, country: RU, region: "23", active: false, note: "Краснодарский край. В перечне нежелательных организаций не найден (23.09.2026); реестр иноагентов проверить вручную."}
+  - {kind: rss, handle: kubnews, url: "https://kubnews.ru/rss/", title: Кубанские новости, country: RU, region: "23", active: false, note: "Краснодарский край. В перечне нежелательных организаций не найден (23.09.2026); реестр иноагентов проверить вручную."}
+  - {kind: rss, handle: todaykhv, url: "https://todaykhv.ru/rss/", title: Хабаровск сегодня, country: RU, region: "27", active: false, note: "Хабаровский край. В перечне нежелательных организаций не найден (23.09.2026); реестр иноагентов проверить вручную."}
