@@ -227,6 +227,49 @@ func (q *Queries) ListLawDrafts(ctx context.Context) ([]ListLawDraftsRow, error)
 	return items, nil
 }
 
+const listVerifiedFederalForRetag = `-- name: ListVerifiedFederalForRetag :many
+SELECT id, eo_number, title, act_number, signed_at, audience_tags
+FROM law_changes
+WHERE verified AND kind = 'federal' AND eo_number IS NOT NULL
+ORDER BY id
+`
+
+type ListVerifiedFederalForRetagRow struct {
+	ID           int64
+	EoNumber     pgtype.Text
+	Title        string
+	ActNumber    pgtype.Text
+	SignedAt     pgtype.Date
+	AudienceTags []string
+}
+
+func (q *Queries) ListVerifiedFederalForRetag(ctx context.Context) ([]ListVerifiedFederalForRetagRow, error) {
+	rows, err := q.db.Query(ctx, listVerifiedFederalForRetag)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListVerifiedFederalForRetagRow
+	for rows.Next() {
+		var i ListVerifiedFederalForRetagRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EoNumber,
+			&i.Title,
+			&i.ActNumber,
+			&i.SignedAt,
+			&i.AudienceTags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVerifiedLaws = `-- name: ListVerifiedLaws :many
 SELECT
     id, title, what_changed, who_affected, actions, audience_tags, region_code, status,
@@ -345,6 +388,21 @@ func (q *Queries) UpdateLawDraft(ctx context.Context, arg UpdateLawDraftParams) 
 		arg.Status,
 		arg.EffectiveAt,
 	)
+	return err
+}
+
+const updateLawTags = `-- name: UpdateLawTags :exec
+UPDATE law_changes SET audience_tags = $2 WHERE id = $1 AND verified
+`
+
+type UpdateLawTagsParams struct {
+	ID           int64
+	AudienceTags []string
+}
+
+// Только теги аудитории: подтверждённые человеком тексты не меняются.
+func (q *Queries) UpdateLawTags(ctx context.Context, arg UpdateLawTagsParams) error {
+	_, err := q.db.Exec(ctx, updateLawTags, arg.ID, arg.AudienceTags)
 	return err
 }
 

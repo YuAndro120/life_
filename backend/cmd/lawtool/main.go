@@ -3,6 +3,7 @@
 //	lawtool fetch [-since 2026-07-01] [-limit 30]  — собрать новые законы, извлечь структуру моделью, сохранить черновики
 //	lawtool fetch-regional [-since ...] [-limit 200] — региональные законы: название и ссылка с официального портала, без модели
 //	lawtool approve-regional [-yes]                 — подтвердить региональные черновики (только названия и ссылки)
+//	lawtool retag [-model ...]                       — пересчитать теги аудитории у подтверждённых законов (тексты не меняются)
 //	lawtool review                                 — проверить черновики вручную; в API попадают только подтверждённые
 //	lawtool stats                                  — сколько подтверждённых, черновиков и отклонённых
 //
@@ -14,11 +15,13 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -68,6 +71,8 @@ func run(cmd string, args []string) error {
 	switch cmd {
 	case "fetch":
 		return fetch(ctx, store, *since, *limit, *model)
+	case "retag":
+		return retag(ctx, store, *model)
 	case "fetch-regional":
 		from, err := time.Parse("2006-01-02", *since)
 		if err != nil {
@@ -255,4 +260,70 @@ func nonNil(s []string) []string {
 		return []string{}
 	}
 	return s
+}
+
+// retag заново разбирает тексты подтверждённых законов и обновляет только теги аудитории (например, после расширения набора тегов).
+// Название, «что изменилось» и «кого касается», подтверждённые человеком, не трогаются; разница печатается.
+func retag(ctx context.Context, store *legal.PGStore, modelName string) error {
+	_, extractor, name, err := factory.New(slog.Default(), modelName)
+	if err != nil {
+		return err
+	}
+	if extractor == nil {
+		return fmt.Errorf("не задан ключ модели для провайдера %s", name)
+	}
+	slog.Info("модель для законов", "провайдер", name)
+	q := store.Queries()
+	rows, err := q.ListVerifiedFederalForRetag(ctx)
+	if err != nil {
+		return err
+	}
+	kremlin := legal.NewKremlin()
+	changed, failed := 0, 0
+	var prompt, completion int
+	for _, r := range rows {
+		doc := legal.Doc{
+			EONumber: r.EoNumber.String, Number: strings.TrimPrefix(r.ActNumber.String, "№ "), Signed: r.SignedAt.Time, Title: r.Title,
+		}
+		_, text, err := kremlin.Text(ctx, doc)
+		if err != nil {
+			fmt.Printf("%s: текст не найден: %v\n", r.ActNumber.String, err)
+			failed++
+			continue
+		}
+		var ex llm.LawDraft
+		var usage llm.Usage
+		for try := 0; try < 5; try++ {
+			ex, usage, err = extractor.ExtractLaw(ctx, llm.LawInput{Title: doc.Title, Number: doc.Number, Fragments: llm.SplitFragments(text, 300)})
+			prompt += usage.PromptTokens
+			completion += usage.CompletionTokens
+			if !errors.Is(err, llm.ErrRateLimited) {
+				break
+			}
+			time.Sleep(20 * time.Second)
+		}
+		if err != nil || !ex.Relevant {
+			fmt.Printf("%s: разбор не удался или закон признан не касающимся граждан, теги не меняю (%v)\n", r.ActNumber.String, err)
+			failed++
+			continue
+		}
+		if sameTags(r.AudienceTags, ex.AudienceTags) {
+			fmt.Printf("%s: теги те же (%s)\n", r.ActNumber.String, strings.Join(r.AudienceTags, ","))
+			continue
+		}
+		if err := q.UpdateLawTags(ctx, sqlcgen.UpdateLawTagsParams{ID: r.ID, AudienceTags: ex.AudienceTags}); err != nil {
+			return err
+		}
+		changed++
+		fmt.Printf("%s: %s → %s\n", r.ActNumber.String, strings.Join(r.AudienceTags, ","), strings.Join(ex.AudienceTags, ","))
+	}
+	fmt.Printf("законов: %d, теги изменены: %d, не удалось: %d, токенов: %d+%d\n", len(rows), changed, failed, prompt, completion)
+	return nil
+}
+
+func sameTags(a, b []string) bool {
+	x, y := append([]string(nil), a...), append([]string(nil), b...)
+	sort.Strings(x)
+	sort.Strings(y)
+	return strings.Join(x, ",") == strings.Join(y, ",")
 }

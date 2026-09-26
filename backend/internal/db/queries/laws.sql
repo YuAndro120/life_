@@ -62,3 +62,13 @@ FROM law_changes;
 UPDATE law_changes SET verified = true, verified_at = now()
 WHERE kind = 'regional_title' AND NOT verified AND NOT rejected
 RETURNING region_code;
+
+-- name: ListVerifiedFederalForRetag :many
+SELECT id, eo_number, title, act_number, signed_at, audience_tags
+FROM law_changes
+WHERE verified AND kind = 'federal' AND eo_number IS NOT NULL
+ORDER BY id;
+
+-- name: UpdateLawTags :exec
+-- Только теги аудитории: подтверждённые человеком тексты не меняются.
+UPDATE law_changes SET audience_tags = $2 WHERE id = $1 AND verified;
