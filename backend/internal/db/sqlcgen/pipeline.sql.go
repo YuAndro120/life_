@@ -206,7 +206,7 @@ FROM stories
 WHERE status IN ('draft', 'published') AND post_count > 0
   AND last_post_at <= $1::timestamptz
   AND (title_neutral IS NULL OR post_count > digest_post_count)
-  AND (source_count >= 2 OR has_official_source)
+  AND (source_count >= 2 OR has_official_source OR source_region IS NOT NULL)
   AND digest_attempts < $2::int
 ORDER BY source_count DESC, last_post_at
 LIMIT $3::int
@@ -227,7 +227,7 @@ type ListStoriesForDigestRow struct {
 }
 
 // Сюжеты, которым пора делать пересказ: новых постов нет уже @quiet_for (дебаунс), попыток немного.
-// Только те, что могут быть опубликованы (≥ 2 источников или официальный): остальные не стоит тратить токены.
+// Только те, что могут быть опубликованы (≥ 2 источников, официальный или региональный): остальные не стоит тратить токены.
 // Сначала самые весомые (больше источников).
 func (q *Queries) ListStoriesForDigest(ctx context.Context, arg ListStoriesForDigestParams) ([]ListStoriesForDigestRow, error) {
 	rows, err := q.db.Query(ctx, listStoriesForDigest, arg.QuietBefore, arg.MaxAttempts, arg.Batch)
@@ -393,7 +393,7 @@ func (q *Queries) ListUnclusteredPosts(ctx context.Context, since pgtype.Timesta
 
 const publishReadyStories = `-- name: PublishReadyStories :execrows
 UPDATE stories SET status = 'published'
-WHERE status = 'draft' AND title_neutral IS NOT NULL AND (source_count >= 2 OR has_official_source)
+WHERE status = 'draft' AND title_neutral IS NOT NULL AND (source_count >= 2 OR has_official_source OR source_region IS NOT NULL)
 `
 
 // Правило публикации (раздел 9): не меньше двух разных источников или официальный источник.
@@ -516,7 +516,7 @@ func (q *Queries) TokensUsedToday(ctx context.Context, day pgtype.Date) (int64, 
 
 const unpublishWeakStories = `-- name: UnpublishWeakStories :execrows
 UPDATE stories SET status = 'draft'
-WHERE status = 'published' AND NOT (source_count >= 2 OR has_official_source)
+WHERE status = 'published' AND NOT (source_count >= 2 OR has_official_source OR source_region IS NOT NULL)
 `
 
 // Если сюжет перестал удовлетворять правилу (например, после ручной правки), возвращаем в черновики.

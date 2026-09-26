@@ -52,14 +52,14 @@ WHERE s.id = @story_id;
 
 -- name: ListStoriesForDigest :many
 -- Сюжеты, которым пора делать пересказ: новых постов нет уже @quiet_for (дебаунс), попыток немного.
--- Только те, что могут быть опубликованы (≥ 2 источников или официальный): остальные не стоит тратить токены.
+-- Только те, что могут быть опубликованы (≥ 2 источников, официальный или региональный): остальные не стоит тратить токены.
 -- Сначала самые весомые (больше источников).
 SELECT id, post_count, source_count, has_official_source, digest_attempts
 FROM stories
 WHERE status IN ('draft', 'published') AND post_count > 0
   AND last_post_at <= @quiet_before::timestamptz
   AND (title_neutral IS NULL OR post_count > digest_post_count)
-  AND (source_count >= 2 OR has_official_source)
+  AND (source_count >= 2 OR has_official_source OR source_region IS NOT NULL)
   AND digest_attempts < @max_attempts::int
 ORDER BY source_count DESC, last_post_at
 LIMIT @batch::int;
@@ -86,12 +86,12 @@ UPDATE stories SET digest_attempts = digest_attempts + 1, digest_error = @error:
 -- name: PublishReadyStories :execrows
 -- Правило публикации (раздел 9): не меньше двух разных источников или официальный источник.
 UPDATE stories SET status = 'published'
-WHERE status = 'draft' AND title_neutral IS NOT NULL AND (source_count >= 2 OR has_official_source);
+WHERE status = 'draft' AND title_neutral IS NOT NULL AND (source_count >= 2 OR has_official_source OR source_region IS NOT NULL);
 
 -- name: UnpublishWeakStories :execrows
 -- Если сюжет перестал удовлетворять правилу (например, после ручной правки), возвращаем в черновики.
 UPDATE stories SET status = 'draft'
-WHERE status = 'published' AND NOT (source_count >= 2 OR has_official_source);
+WHERE status = 'published' AND NOT (source_count >= 2 OR has_official_source OR source_region IS NOT NULL);
 
 -- name: ListRecentPosts :many
 -- Для отладки склейки: все нерекламные посты за окно вместе с текущим сюжетом.
