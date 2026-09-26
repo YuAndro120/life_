@@ -17,7 +17,7 @@ func webServer(t *testing.T) http.Handler {
 		}
 	}
 	must(os.WriteFile(filepath.Join(dir, "index.html"), []byte("<html>Штиль</html>"), 0o644))
-	must(os.WriteFile(filepath.Join(dir, "sw.js"), []byte("self.x=1"), 0o644))
+	must(os.WriteFile(filepath.Join(dir, "sw.js"), []byte("const BUILD = '__BUILD__'; const ASSETS = JSON.parse('__ASSETS__');"), 0o644))
 	must(os.WriteFile(filepath.Join(dir, "manifest.webmanifest"), []byte("{}"), 0o644))
 	must(os.MkdirAll(filepath.Join(dir, "js"), 0o755))
 	must(os.WriteFile(filepath.Join(dir, "js", "app.js"), []byte("export {}"), 0o644))
@@ -79,5 +79,50 @@ func TestWebDoesNotShadowAPIAndIsOptional(t *testing.T) {
 	}
 	if code := get(NewServer(&fakeStore{}).WithWeb("/нет/такого/каталога").Handler(), "/").Code; code != 404 {
 		t.Fatalf("несуществующий каталог отключает веб: %d", code)
+	}
+}
+
+func TestServiceWorkerGetsVersionAndAssetList(t *testing.T) {
+	h := webServer(t)
+	rec := get(h, "/sw.js")
+	body := rec.Body.String()
+	if rec.Code != 200 || strings.Contains(body, "__BUILD__") || strings.Contains(body, "__ASSETS__") {
+		t.Fatalf("метки не подставлены: %d %q", rec.Code, body)
+	}
+	for _, want := range []string{`"/index.html"`, `"/js/app.js"`, `"/fonts/a.ttf"`, `"/manifest.webmanifest"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("в списке нет %s: %s", want, body)
+		}
+	}
+	for _, bad := range []string{"test/core.test.js", "dev-server.mjs", `"/sw.js"`} {
+		if strings.Contains(body, bad) {
+			t.Errorf("служебный файл в списке: %s", bad)
+		}
+	}
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
+		t.Errorf("sw.js должен всегда сверяться с сервером: %q", cc)
+	}
+	if rec.Header().Get("Service-Worker-Allowed") != "/" {
+		t.Errorf("нет Service-Worker-Allowed")
+	}
+}
+
+func TestServiceWorkerVersionChangesWithContent(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, content string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("index.html", "v1")
+	write("sw.js", "const BUILD = '__BUILD__'; const ASSETS = JSON.parse('__ASSETS__');")
+	first := string(buildServiceWorker(dir))
+	write("index.html", "v2")
+	second := string(buildServiceWorker(dir))
+	if first == second {
+		t.Fatal("версия воркера должна меняться вместе с файлами")
+	}
+	if again := string(buildServiceWorker(dir)); again != second {
+		t.Fatal("версия должна быть стабильной для одного и того же содержимого")
 	}
 }

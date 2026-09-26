@@ -1,10 +1,10 @@
-@font-face { font-family: 'Onest'; src: url('../fonts/Onest.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: 'Golos Text'; src: url('../fonts/GolosText.ttf') format('truetype'); font-weight: 400 900; font-display: swap; }
-@font-face { font-family: 'Spectral'; src: url('../fonts/Spectral-Medium.ttf') format('truetype'); font-weight: 400 500; font-display: swap; }
-@font-face { font-family: 'Spectral'; src: url('../fonts/Spectral-SemiBold.ttf') format('truetype'); font-weight: 600 800; font-display: swap; }
-@font-face { font-family: 'Spectral'; src: url('../fonts/Spectral-Italic.ttf') format('truetype'); font-weight: 400 800; font-style: italic; font-display: swap; }
-@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-Medium.ttf') format('truetype'); font-weight: 500 700; font-display: swap; }
+@font-face { font-family: 'Onest'; src: url('../fonts/Onest.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Golos Text'; src: url('../fonts/GolosText.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'Spectral'; src: url('../fonts/Spectral-Medium.woff2') format('woff2'); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: 'Spectral'; src: url('../fonts/Spectral-SemiBold.woff2') format('woff2'); font-weight: 600 800; font-display: swap; }
+@font-face { font-family: 'Spectral'; src: url('../fonts/Spectral-Italic.woff2') format('woff2'); font-weight: 400 800; font-style: italic; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-Medium.woff2') format('woff2'); font-weight: 500 700; font-display: swap; }
 
 :root, [data-theme='paper'] {
   --bg: #f2f1ec; --ink: #22211e; --body: #3d3c38; --muted: #66655f; --line: #d8d6ce;
@@ -55,9 +55,15 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 #app .bar .col { padding-top: 12px; padding-bottom: calc(8px + max(0px, env(safe-area-inset-bottom) - var(--dead, 0px))); }
 #app .bar.tabs .col { padding: 0; }
 #app .bar.tabs { padding-bottom: env(safe-area-inset-bottom); }
-.screen { animation: fade 0.25s ease-out; }
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .screen { animation: none; } }
+/* Переходы между экранами: View Transitions (Safari 18+), плавное смещение и затухание */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.26s; animation-timing-function: cubic-bezier(0.22, 0.8, 0.2, 1); }
+html[data-nav='push']::view-transition-old(root) { animation-name: out-left; } html[data-nav='push']::view-transition-new(root) { animation-name: in-right; }
+html[data-nav='pop']::view-transition-old(root) { animation-name: out-right; } html[data-nav='pop']::view-transition-new(root) { animation-name: in-left; }
+html[data-nav='tab']::view-transition-old(root) { animation-name: fade-out; } html[data-nav='tab']::view-transition-new(root) { animation-name: fade-in; }
+@keyframes out-left { to { transform: translateX(-22%); opacity: 0.4; } } @keyframes in-right { from { transform: translateX(28%); opacity: 0; } }
+@keyframes out-right { to { transform: translateX(22%); opacity: 0; } } @keyframes in-left { from { transform: translateX(-28%); opacity: 0.4; } }
+@keyframes fade-out { to { opacity: 0; } } @keyframes fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
 
 /* Метаданные: моно заглавными (Бумага, Сумерки) или обычный текст (Шалфей) */
 .meta { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
@@ -211,3 +217,10 @@ textarea.field.big { min-height: 132px; background: var(--card); border-radius: 
 /* Без полос прокрутки везде */
 * { scrollbar-width: none; -ms-overflow-style: none; }
 *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Мгновенный отклик на касание и быстрые списки */
+.btn, .chip, .switch-row, .theme-opt, .menu button, .list-btn, .todo, .link-row, .cal-row, .law-card, .segments button { transition: transform 0.08s ease-out, opacity 0.08s ease-out; }
+.btn:active, .theme-opt:active, .law-card:active { transform: scale(0.98); opacity: 0.85; }
+.chip:active, .segments button:active, .switch-row:active, .list-btn:active, .todo:active, .link-row:active, .cal-row:active { opacity: 0.55; }
+.story { content-visibility: auto; contain-intrinsic-size: auto 150px; }
+#app .scroll { will-change: scroll-position; }

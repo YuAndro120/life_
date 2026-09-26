@@ -57,12 +57,13 @@ test('скрытых сюжетов хранится не больше лими�
   assert.equal(s.state.prefs.hiddenStories.at(-1), 's309');
 });
 
-test('кэш ленты переживает перезапуск; без сети и без кэша — ошибка', () => {
+test('кэш ленты переживает перезапуск; без сети и без кэша — ошибка', async () => {
   const storage = memory();
   const a = createStore(storage);
   a.setLoadFailed('нет связи');
   assert.equal(a.state.loadError, 'нет связи');
   a.setContent({ feed: { stories: [] }, laws: [{ id: 'l' }] });
+  await new Promise((r) => setTimeout(r, 20)); // запись кэша откладывается на простой
   const b = createStore(storage);
   assert.deepEqual(b.state.laws, [{ id: 'l' }]);
   b.setLoadFailed('нет связи');

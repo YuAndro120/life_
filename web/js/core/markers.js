@@ -1,6 +1,26 @@
 // Правила по словам: политика, СВО, слова пользователя. Работают только на устройстве.
 import { alnumTokens, letterTokens, normalize } from './text.js';
 
+// Текст сюжета разбирается один раз: выпуск пересобирается при каждом действии, а сюжетов сотни.
+const parsed = new WeakMap();
+function parse(story) {
+  let p = parsed.get(story);
+  if (!p) {
+    const text = normalize(`${story.title} ${story.summary}`);
+    p = { text, words: letterTokens(text), full: null };
+    parsed.set(story, p);
+  }
+  return p;
+}
+function parseFull(story) {
+  const p = parse(story);
+  if (!p.full) {
+    const text = normalize(`${story.title} ${story.summary} ${story.meaning ?? ''}`);
+    p.full = { text, tokens: alnumTokens(text) };
+  }
+  return p.full;
+}
+
 const hasStem = (words, list) => words.some((w) => list.some(([stem, tail]) => w.startsWith(stem) && w.length - stem.length <= tail));
 
 // --- Политика: политические фигуры и институты, органы власти, санкции, реестры иноагентов ---
@@ -9,7 +29,7 @@ const POLITICAL = [
   ['макрон', 2], ['шольц', 2], ['эрдоган', 2], ['байден', 2], ['депутат', 3], ['сенат', 3], ['конгресс', 3], ['мид', 0], ['иноагент', 4],
   ['нежелательн', 4], ['санкц', 4], ['минюст', 2], ['минобороны', 0],
 ];
-export const isPolitical = (story) => hasStem(letterTokens(normalize(`${story.title} ${story.summary}`)), POLITICAL);
+export const isPolitical = (story) => hasStem(parse(story).words, POLITICAL);
 
 // --- СВО ---
 const WAR_WORDS = [
@@ -24,16 +44,15 @@ const LAW_PHRASES = [
 ];
 
 export function isWar(story) {
-  const text = normalize(`${story.title} ${story.summary}`);
+  const { text, words } = parse(story);
   if (WAR_PHRASES.some((p) => text.includes(p))) return true;
-  return hasStem(letterTokens(text), WAR_WORDS);
+  return hasStem(words, WAR_WORDS);
 }
 
 /** Официальное заявление о том, что СВО закончилась: единственное исключение из «всё про СВО скрыто». */
 export function isWarEnd(story) {
   if (story.info_type !== 'official') return false;
-  const text = normalize(`${story.title} ${story.summary}`);
-  const words = letterTokens(text);
+  const { text, words } = parse(story);
   const mentionsWar = text.includes('специальной военной операции') || text.includes('специальная военная операция') || words.includes('сво');
   return mentionsWar && words.some((w) => END_WORDS.some((e) => w.startsWith(e)));
 }
@@ -57,7 +76,6 @@ export function normalizeWord(raw) {
 /** Слово ищется по началу слов («футбол» найдёт «футболист»), фраза из нескольких слов — как подстрока. */
 export function matchesWords(story, words) {
   if (!words.length) return false;
-  const text = normalize(`${story.title} ${story.summary} ${story.meaning ?? ''}`);
-  const tokens = alnumTokens(text);
+  const { text, tokens } = parseFull(story);
   return words.some((w) => (w.includes(' ') ? text.includes(w) : tokens.some((t) => t.startsWith(w))));
 }

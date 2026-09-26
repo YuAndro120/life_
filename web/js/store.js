@@ -85,8 +85,10 @@ export function createStore(storage) {
       state.fetchedAt = now.toISOString();
       state.offline = false;
       state.loadError = null;
-      write(storage, KEYS.cache, { feed, laws, fetchedAt: state.fetchedAt });
       emit();
+      // Запись ~0,5 МБ в localStorage синхронна: откладываем на простой, чтобы не подвешивать первую отрисовку.
+      const persist = () => write(storage, KEYS.cache, { feed, laws, fetchedAt: state.fetchedAt });
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(persist, { timeout: 2000 }); else setTimeout(persist, 0);
     },
     setLoadFailed(message) {
       state.offline = state.feed !== null;

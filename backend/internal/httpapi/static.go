@@ -1,11 +1,16 @@
 package httpapi
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"io/fs"
 	"mime"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -29,7 +34,48 @@ func (s *Server) WithWeb(dir string) *Server {
 		return s
 	}
 	s.webDir = dir
+	s.swBody = buildServiceWorker(dir)
 	return s
+}
+
+// skipInAssets — служебные файлы, которые не входят в кэш оболочки и не влияют на версию.
+func skipInAssets(rel string) bool {
+	base := path.Base(rel)
+	return rel == "sw.js" || strings.HasPrefix(rel, "test/") || strings.HasPrefix(rel, "e2e/") || strings.HasPrefix(rel, "tools/") ||
+		strings.HasPrefix(base, ".") || strings.HasSuffix(base, ".mjs") || strings.HasSuffix(base, ".md") || strings.HasSuffix(base, ".txt") ||
+		strings.HasSuffix(base, ".map")
+}
+
+// buildServiceWorker подставляет в sw.js версию (хэш содержимого файлов) и список файлов оболочки.
+// Код изменился — версия другая — браузер ставит новый воркер и обновляет кэш; ничего вручную поднимать не нужно.
+func buildServiceWorker(dir string) []byte {
+	tpl, err := os.ReadFile(filepath.Join(dir, "sw.js"))
+	if err != nil {
+		return nil
+	}
+	var assets []string
+	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(dir, p)
+		rel = filepath.ToSlash(rel)
+		if !skipInAssets(rel) {
+			assets = append(assets, "/"+rel)
+		}
+		return nil
+	})
+	sort.Strings(assets)
+	h := sha256.New()
+	for _, a := range assets {
+		body, _ := os.ReadFile(filepath.Join(dir, strings.TrimPrefix(a, "/")))
+		h.Write([]byte(a))
+		h.Write(body)
+	}
+	h.Write(tpl)
+	list, _ := json.Marshal(append([]string{"/"}, assets...))
+	out := strings.ReplaceAll(string(tpl), "__BUILD__", hex.EncodeToString(h.Sum(nil))[:12])
+	return []byte(strings.ReplaceAll(out, "__ASSETS__", string(list)))
 }
 
 // noListing не даёт FileServer показывать содержимое каталогов: отдаётся только index.html.
@@ -67,6 +113,15 @@ func (s *Server) web() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
+		if r.URL.Path == "/sw.js" && s.swBody != nil {
+			h := w.Header()
+			h.Set("Content-Type", "text/javascript; charset=utf-8")
+			h.Set("Cache-Control", "no-cache")
+			h.Set("Service-Worker-Allowed", "/")
+			h.Set("X-Content-Type-Options", "nosniff")
+			_, _ = w.Write(s.swBody)
+			return
+		}
 		h := w.Header()
 		h.Set("Content-Security-Policy", contentSecurityPolicy)
 		h.Set("X-Content-Type-Options", "nosniff")
@@ -74,7 +129,7 @@ func (s *Server) web() http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=()")
 		switch strings.ToLower(path.Ext(r.URL.Path)) {
-		case ".ttf", ".png":
+		case ".ttf", ".woff2", ".png":
 			h.Set("Cache-Control", "public, max-age=86400")
 		default:
 			h.Set("Cache-Control", "no-cache") // всегда сверяем с сервером (ETag), чтобы обновления доходили сразу

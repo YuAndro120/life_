@@ -20,6 +20,7 @@ type Server struct {
 	store  api.Store
 	now    func() time.Time
 	webDir string // каталог веб-приложения; пусто — только API
+	swBody []byte // sw.js с подставленной версией и списком файлов
 }
 
 func NewServer(store api.Store) *Server {

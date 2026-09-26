@@ -8,16 +8,25 @@ import { ACTIONS } from '../core/filter.js';
 import { infoTitle, topicTitle, countryTitle } from '../core/taxonomy.js';
 import { regionTitle } from '../core/regions.js';
 
+// Выпуск пересобирается только при изменении данных, профиля, настроек или дня: на экраны «сюжет» и «закон» он берётся из кэша.
+let memo = { key: '', edition: null };
+
 /** Выпуск для текущего состояния: сборка на устройстве. */
 export function currentEdition(ctx) {
   const { state } = ctx.store;
   if (!state.feed) return null;
   const now = ctx.now();
+  const today = dayOf(now);
+  const prefs = ctx.store.effectivePrefs();
+  const key = JSON.stringify([state.fetchedAt, state.feed.generated_at, state.laws.length, state.counter.number, state.profile, prefs, today]);
+  if (memo.key === key) return memo.edition;
   const end = new Date(Math.max(Date.parse(state.feed.generated_at) || 0, now.getTime())).toISOString();
-  return buildEdition({
-    number: Math.max(state.counter.number, 1), feed: state.feed, laws: state.laws, profile: state.profile, prefs: ctx.store.effectivePrefs(),
-    window: { start: null, end }, today: dayOf(now),
+  const edition = buildEdition({
+    number: Math.max(state.counter.number, 1), feed: state.feed, laws: state.laws, profile: state.profile, prefs,
+    window: { start: null, end }, today,
   });
+  memo = { key, edition };
+  return edition;
 }
 
 const storyMeta = (story, theme) => {

@@ -78,11 +78,14 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
 }
 
+// Позиции прокрутки по адресам: возврат «назад» приводит в то же место ленты.
 let lastPath = null;
-function render(keepScroll = false) {
-  applyTheme();
-  const route = currentRoute();
-  const onboarding = !store.state.profile.onboardingCompleted;
+const scrollByPath = new Map();
+const depthOf = (route) => (route.name === 'story' || route.name === 'law' ? 1 : 0);
+let lastDepth = 0;
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function buildScreen(route, onboarding) {
   let screen;
   let tab = null;
   try {
@@ -110,14 +113,38 @@ function render(keepScroll = false) {
   footer?.remove();
   const scroller = h('div', { class: 'scroll', id: 'scroll' }, h('div', { class: 'col' }, screen));
   const bar = footer ? h('div', { class: 'bar' }, h('div', { class: 'col' }, footer)) : tab !== null ? tabsBar(tab) : null;
+  return { scroller, bar };
+}
+
+function render(keepScroll = false) {
+  applyTheme();
+  const route = currentRoute();
+  const onboarding = !store.state.profile.onboardingCompleted;
+  const routeChanged = lastPath !== null && lastPath !== route.path;
   const previous = document.getElementById('scroll');
-  const keep = keepScroll && lastPath === route.path && previous ? previous.scrollTop : 0;
-  clear(appEl);
-  appEl.append(scroller);
-  if (bar) appEl.append(bar);
-  scroller.scrollTop = keep;
+  if (previous && lastPath !== null) scrollByPath.set(lastPath, previous.scrollTop);
+
+  const { scroller, bar } = buildScreen(route, onboarding);
+  const depth = depthOf(route);
+  const kind = depth > lastDepth ? 'push' : depth < lastDepth ? 'pop' : 'tab';
+  const commit = () => {
+    clear(appEl);
+    appEl.append(scroller);
+    if (bar) appEl.append(bar);
+    // Обычная перерисовка сохраняет прокрутку; при переходе назад — возвращаем прежнее место, иначе наверх.
+    scroller.scrollTop = !routeChanged && keepScroll ? scrollByPath.get(route.path) ?? 0 : kind === 'pop' ? scrollByPath.get(route.path) ?? 0 : 0;
+    renderUndo();
+  };
+  if (!routeChanged && keepScroll && previous) scrollByPath.set(route.path, previous.scrollTop);
   lastPath = route.path;
-  renderUndo();
+  lastDepth = depth;
+  // Переход между экранами плавный (View Transitions, Safari 18+); перерисовки без смены адреса — мгновенные.
+  if (routeChanged && document.startViewTransition && !reducedMotion()) {
+    document.documentElement.dataset.nav = kind;
+    document.startViewTransition(commit);
+  } else {
+    commit();
+  }
 }
 
 let undoTimer = null;
@@ -158,7 +185,17 @@ window.addEventListener('online', () => refresh(true));
 setInterval(() => { if (!document.hidden) render(true); }, 10 * 60 * 1000);
 
 if (navigator.storage?.persist) navigator.storage.persist().then((ok) => { ctx.local.persisted = ok; }).catch(() => {});
-if ('serviceWorker' in navigator && !isDev) navigator.serviceWorker.register('/sw.js').catch(() => {});
+// Сервис-воркер кэширует оболочку: повторный запуск идёт без сети. Проверка обновления при каждом возвращении в приложение (не чаще раза в минуту).
+if ('serviceWorker' in navigator && !isDev) {
+  let lastCheck = 0;
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || Date.now() - lastCheck < 60_000) return;
+      lastCheck = Date.now();
+      registration.update().catch(() => {});
+    });
+  }).catch(() => {});
+}
 
 // iOS в режиме прозрачного статус-бара отдаёт странице окно на высоту статус-бара короче экрана: внизу остаётся полоса, где ничего не рисуется.
 // Её высота записывается в --dead и учитывается вместо нижней безопасной зоны, чтобы кнопки не висели слишком высоко.
