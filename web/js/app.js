@@ -160,9 +160,9 @@ setInterval(() => { if (!document.hidden) render(true); }, 10 * 60 * 1000);
 if (navigator.storage?.persist) navigator.storage.persist().then((ok) => { ctx.local.persisted = ok; }).catch(() => {});
 if ('serviceWorker' in navigator && !isDev) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
-// iOS в режиме прозрачного статус-бара отдаёт странице окно на высоту статус-бара короче экрана (внизу остаётся пустая полоса).
-// Если нехватка равна верхней безопасной зоне, растягиваем рамку на весь экран.
-function fitFrame() {
+// iOS в режиме прозрачного статус-бара отдаёт странице окно на высоту статус-бара короче экрана: внизу остаётся полоса, где ничего не рисуется.
+// Её высота записывается в --dead и учитывается вместо нижней безопасной зоны, чтобы кнопки не висели слишком высоко.
+function measureDeadZone() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)';
   document.body.append(probe);
@@ -171,12 +171,12 @@ function fitFrame() {
   const portrait = innerHeight > innerWidth;
   const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
   const missing = full - innerHeight;
-  const stretch = portrait && safeTop > 0 && missing > 0 && missing <= safeTop + 2;
-  document.documentElement.style.setProperty('--frame-h', stretch ? `${full}px` : '100%');
+  const quirk = portrait && safeTop > 0 && missing > 0 && missing <= safeTop + 2;
+  document.documentElement.style.setProperty('--dead', quirk ? `${missing}px` : '0px');
 }
-fitFrame();
-window.addEventListener('resize', fitFrame);
-window.addEventListener('orientationchange', () => setTimeout(fitFrame, 300));
+measureDeadZone();
+window.addEventListener('resize', measureDeadZone);
+window.addEventListener('orientationchange', () => setTimeout(measureDeadZone, 300));
 
 installDebugPanel();
 render(false);
