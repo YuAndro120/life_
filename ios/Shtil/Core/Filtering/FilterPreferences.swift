@@ -5,7 +5,7 @@ enum HeavyMode: String, Codable, CaseIterable, Sendable {
 }
 
 /// Настройки, влияющие на состав выпуска. Тема и расписание сюда не входят.
-struct FilterPreferences: Equatable, Sendable {
+struct FilterPreferences: Equatable, Codable, Sendable {
     var calmMode: Bool
     var infoTypes: Set<InfoType>
     var heavyMode: HeavyMode

@@ -6,6 +6,7 @@ enum ProfileSummary {
         var parts: [String] = []
         if let region = Region.title(for: profile.regionCode) { parts.append(region) }
         for w in UserProfile.Work.allCases where profile.work.contains(w) { parts.append(w.title) }
+        for o in UserProfile.Occupation.allCases where profile.occupations.contains(o) { parts.append(o.title) }
         if profile.drives == true { parts.append("водитель") }
         parts.append(contentsOf: Topic.allCases.filter { preferences.interests.contains($0) }.prefix(3).map(\.title))
         return parts.isEmpty ? nil : parts.prefix(5).joined(separator: " · ")

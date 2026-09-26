@@ -30,6 +30,7 @@
 		45C6FDC68569568FF36E7157 /* Fixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E782453F2063C46EF1B227 /* Fixtures.swift */; };
 		46F36C0000FB6C0B66F78DC8 /* GolosText.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 12592B5FA207030C6903010C /* GolosText.ttf */; };
 		470EBB27B0AD63A7A419D801 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE7BDFECA1E641E6A6CAE7 /* TodayView.swift */; };
+		48F53FAAD6A96E943909BE8F /* ProfileBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA3FDBDACB4A43C4614CEC55 /* ProfileBackup.swift */; };
 		4E856330D5A2F3C2BE473152 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9FFBAD6BC1E7C1A81352347B /* Assets.xcassets */; };
 		4F1544404B462A6E6A041C02 /* IBMPlexMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8383037DB7786CCEDF7C67AD /* IBMPlexMono-Medium.ttf */; };
 		56FD48CD21DD616F58018133 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D671F98141DBF06DB3B0795C /* Profile.swift */; };
@@ -74,6 +75,7 @@
 		E7C6CCD8777958978262915C /* AboutParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FD34B32267DD829B1507C6 /* AboutParser.swift */; };
 		E91A835F09E0A9B8227CCD29 /* TabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814998760DAE23653A87B4B4 /* TabBar.swift */; };
 		E9735537C85EF82CFD9CDE0B /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02AB45296577EA4180CA34C6 /* Components.swift */; };
+		EBD7FDD422AD15319A10B495 /* ProfileBackupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EEEE05521D0EB95D8B6FF80 /* ProfileBackupTests.swift */; };
 		EC67C17B874F434A7C6B07BB /* FormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE722442223BB12DA85E7A /* FormattingTests.swift */; };
 		EF51CE6AE675763B9E593392 /* ThemeChoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D25426FC1E3707C3C434C98 /* ThemeChoice.swift */; };
 		EFFFF296D52010F6FB6D4036 /* RuFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED38AFE3E599F396EA141168 /* RuFormat.swift */; };
@@ -151,6 +153,7 @@
 		73E812067082A431F0BDA4D5 /* BuildingPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildingPlanTests.swift; sourceTree = "<group>"; };
 		7D277326CA79C017501167FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7DE3BB5A8C46DA4FA3E2A71E /* ThemePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePicker.swift; sourceTree = "<group>"; };
+		7EEEE05521D0EB95D8B6FF80 /* ProfileBackupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileBackupTests.swift; sourceTree = "<group>"; };
 		814998760DAE23653A87B4B4 /* TabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBar.swift; sourceTree = "<group>"; };
 		828D80AD650BE78F3A3A5B01 /* FeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackTests.swift; sourceTree = "<group>"; };
 		8383037DB7786CCEDF7C67AD /* IBMPlexMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "IBMPlexMono-Medium.ttf"; sourceTree = "<group>"; };
@@ -164,6 +167,7 @@
 		B1DCC7311219907920FC557B /* ThemeFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeFonts.swift; sourceTree = "<group>"; };
 		B664E6520554654C95E008AF /* DebugLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLaunch.swift; sourceTree = "<group>"; };
 		B9704B4509C3EF4B7132F295 /* FilterEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterEngineTests.swift; sourceTree = "<group>"; };
+		BA3FDBDACB4A43C4614CEC55 /* ProfileBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileBackup.swift; sourceTree = "<group>"; };
 		BD9364B69B6ED2F7A4953615 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		BE8D98BB33BE75E01B67DA69 /* AboutParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutParserTests.swift; sourceTree = "<group>"; };
 		CAFF0558405AEC19067495F6 /* IBMPlexMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "IBMPlexMono-Regular.ttf"; sourceTree = "<group>"; };
@@ -285,6 +289,7 @@
 				205D3D896F053D304F68B008 /* FilterSettings.swift */,
 				D2607D04B037B2CBA38B286F /* PersistenceStack.swift */,
 				D671F98141DBF06DB3B0795C /* Profile.swift */,
+				BA3FDBDACB4A43C4614CEC55 /* ProfileBackup.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -370,6 +375,7 @@
 				54F9A27E4068B3AC3969E265 /* ModelsTests.swift */,
 				05A7625F93C019FDA12C1B75 /* PersistenceTests.swift */,
 				5DE6260A0C8F27CB96089B24 /* PoliticalMarkersTests.swift */,
+				7EEEE05521D0EB95D8B6FF80 /* ProfileBackupTests.swift */,
 				BD9364B69B6ED2F7A4953615 /* TestSupport.swift */,
 				8BDBD3DF1860E360A2BFD910 /* ThemeTests.swift */,
 				ED14739CC0A9743FA5C51718 /* WarAndWordFilterTests.swift */,
@@ -591,6 +597,7 @@
 				86BC0A57336C79476CEB083A /* PersistenceStack.swift in Sources */,
 				89B7BC43E465AE2E176BC04A /* PoliticalMarkers.swift in Sources */,
 				56FD48CD21DD616F58018133 /* Profile.swift in Sources */,
+				48F53FAAD6A96E943909BE8F /* ProfileBackup.swift in Sources */,
 				F1ABCA47A76D4DBF7696A5DB /* ProfileForm.swift in Sources */,
 				5824515FD1BFC7A6099D2723 /* ProfileSummary.swift in Sources */,
 				58FA838A60101B98189CF897 /* ProfileView.swift in Sources */,
@@ -628,6 +635,7 @@
 				3A6E14DA59E4FCDE228BBC50 /* ModelsTests.swift in Sources */,
 				F39DEDD445E00398626B67F2 /* PersistenceTests.swift in Sources */,
 				E3259868BC73CC61B972BEB4 /* PoliticalMarkersTests.swift in Sources */,
+				EBD7FDD422AD15319A10B495 /* ProfileBackupTests.swift in Sources */,
 				1CB347E874872892A9B304C6 /* TestSupport.swift in Sources */,
 				87247F113AE6BB8E676F630D /* ThemeTests.swift in Sources */,
 				9C3DE416ECBF9F4A37C5855F /* WarAndWordFilterTests.swift in Sources */,

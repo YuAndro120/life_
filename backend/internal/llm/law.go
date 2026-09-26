@@ -18,6 +18,11 @@ var AudienceTags = []string{
 	"work:employee", "work:ip", "work:ip_usn", "work:selfemployed", "work:student",
 	"housing:renter", "housing:owner", "housing:mortgage",
 	"transport:driver", "military:registered",
+	// Сфера работы и что продаёт ИП: теги совпадают с ответами профиля в приложении.
+	"industry:it", "industry:trade", "industry:food", "industry:education", "industry:health", "industry:construction",
+	"industry:transport", "industry:industry", "industry:agriculture", "industry:finance", "industry:publicService",
+	"industry:beauty", "industry:creative",
+	"sells:goods", "sells:marked", "sells:alcohol", "sells:food", "sells:online", "sells:services", "sells:transport", "sells:rent",
 }
 
 // LawInput — закон для извлечения. Text уже нормализован (legal.Normalize).

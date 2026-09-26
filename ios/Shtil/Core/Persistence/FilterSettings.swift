@@ -27,6 +27,8 @@ final class FilterSettings {
     var hiddenStories: [String] = []
     var storyLimit: Int = 15
     var hideWar: Bool = true
+    /// Хранить копию профиля в связке ключей (для восстановления после переустановки).
+    var backupEnabled: Bool = true
     var blockedWords: [String] = []
 
     static let hiddenLimit = 300

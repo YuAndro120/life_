@@ -41,6 +41,34 @@ import Testing
         #expect(m.housing.contains(.mortgage))
     }
 
+    @Test func occupationsAndSells() {
+        let r = AboutParser.parse("Я программист, живу в Москве")
+        #expect(r.occupations == [.it])
+        let b = AboutParser.parse("Занимаюсь торговлей на Wildberries, продаю одежду и обувь")
+        #expect(b.sells.contains(.online))
+        #expect(b.sells.contains(.marked))
+        #expect(b.work == [.ip])
+        #expect(b.occupations.contains(.trade))
+        let s = AboutParser.parse("ИП, делаю маникюр, мастер салона красоты")
+        #expect(s.occupations.contains(.beauty))
+        #expect(s.sells.contains(.services))
+    }
+
+    @Test func aStudentWhoRentsIsNotASeller() {
+        let r = AboutParser.parse("Студент, снимаю квартиру, заказываю доставку")
+        #expect(r.sells.isEmpty)
+        #expect(r.work == [.student])
+        #expect(r.occupations.isEmpty)
+    }
+
+    @Test func occupationAndSellsBecomeAudienceTags() {
+        let p = UserProfile(work: [.ip], occupations: [.trade], sells: [.marked, .online])
+        let tags = AudienceMatcher.audienceTags(for: p)
+        #expect(tags.contains("industry:trade"))
+        #expect(tags.contains("sells:marked"))
+        #expect(tags.contains("sells:online"))
+    }
+
     @Test func drivingNegation() {
         #expect(AboutParser.parse("Не вожу, езжу на метро").drives == false)
         #expect(AboutParser.parse("Вожу каждый день").drives == true)

@@ -3,7 +3,7 @@ import Foundation
 /// Разбор текста «расскажите о себе» на устройстве: регион, работа, жильё, авто, интересы, что не показывать.
 /// Текст никуда не отправляется. Правила по словам; результат показывается плашками, и человек может любую убрать.
 struct AboutParse: Equatable, Sendable {
-    enum Kind: String, Sendable { case region, work, housing, drives, gender, interest, mute, word }
+    enum Kind: String, Sendable { case region, work, occupation, sells, housing, drives, gender, interest, mute, word }
 
     struct Chip: Identifiable, Equatable, Sendable {
         let kind: Kind
@@ -16,6 +16,8 @@ struct AboutParse: Equatable, Sendable {
     var gender: UserProfile.Gender?
     var work: Set<UserProfile.Work> = []
     var housing: Set<UserProfile.Housing> = []
+    var occupations: Set<UserProfile.Occupation> = []
+    var sells: Set<UserProfile.Sells> = []
     var drives: Bool?
     var interests: Set<Topic> = []
     var mutedTopics: Set<Topic> = []
@@ -29,6 +31,8 @@ struct AboutParse: Equatable, Sendable {
         if let code = regionCode, let title = Region.title(for: code) { out.append(.init(kind: .region, key: code, title: title)) }
         if let gender { out.append(.init(kind: .gender, key: gender.rawValue, title: gender.title)) }
         for w in UserProfile.Work.allCases where work.contains(w) { out.append(.init(kind: .work, key: w.rawValue, title: w.title)) }
+        for o in UserProfile.Occupation.allCases where occupations.contains(o) { out.append(.init(kind: .occupation, key: o.rawValue, title: o.title)) }
+        for x in UserProfile.Sells.allCases where sells.contains(x) { out.append(.init(kind: .sells, key: x.rawValue, title: "Продаю: \(x.title.lowercased())")) }
         for h in UserProfile.Housing.allCases where housing.contains(h) { out.append(.init(kind: .housing, key: h.rawValue, title: h.title)) }
         if let drives { out.append(.init(kind: .drives, key: "\(drives)", title: drives ? "Вожу авто" : "Не вожу")) }
         for t in Topic.allCases where interests.contains(t) { out.append(.init(kind: .interest, key: t.rawValue, title: t.title)) }
@@ -45,6 +49,8 @@ struct AboutParse: Equatable, Sendable {
             case .region: r.regionCode = nil
             case .gender: r.gender = nil
             case .work: if let w = UserProfile.Work(rawValue: chip.key) { r.work.remove(w) }
+            case .occupation: if let o = UserProfile.Occupation(rawValue: chip.key) { r.occupations.remove(o) }
+            case .sells: if let x = UserProfile.Sells(rawValue: chip.key) { r.sells.remove(x) }
             case .housing: if let h = UserProfile.Housing(rawValue: chip.key) { r.housing.remove(h) }
             case .drives: r.drives = nil
             case .interest: if let t = Topic(rawValue: chip.key) { r.interests.remove(t) }
@@ -61,6 +67,8 @@ struct AboutParse: Equatable, Sendable {
         if let gender { profile.gender = gender }
         profile.work.formUnion(work)
         profile.housing.formUnion(housing)
+        profile.occupations.formUnion(occupations)
+        profile.sells.formUnion(sells)
         if let drives { profile.drives = drives }
         for t in interests { preferences.toggleInterestIfNeeded(t) }
         for t in mutedTopics where !preferences.interests.contains(t) { preferences.stopTopics.insert(t) }
@@ -95,6 +103,15 @@ enum AboutParser {
         if has(["студент", "учусь", "школьник"]) { r.work.insert(.student) }
         if positive.contains("по найму") || has(["наемн", "сотрудник"]) { r.work.insert(.employee) }
 
+        for (occupation, stems) in Self.occupationWords where has(stems) { r.occupations.insert(occupation) }
+        // Что продаёт: только если человек сам говорит, что торгует или оказывает услуги, либо он ИП или самозанятый.
+        let sellingCue = has(["продаю", "торгую", "занимаюсь", "бизнес", "предлагаю", "оказываю", "изготавливаю", "выпекаю", "сдаю"])
+        if sellingCue || !r.work.isDisjoint(with: [.ip, .selfemployed]) {
+            for (kind, stems) in Self.sellsWords where has(stems) { r.sells.insert(kind) }
+        }
+        // Без явного статуса тот, кто говорит о своём деле, ведёт его как предприниматель.
+        if sellingCue, !r.sells.isEmpty, r.work.isDisjoint(with: [.ip, .selfemployed, .employee]) { r.work.insert(.ip) }
+
         if has(["снимаю", "аренд"]) { r.housing.insert(.renter) }
         if positive.contains("своя квартира") || positive.contains("свое жилье") || has(["собственник", "владелец"]) { r.housing.insert(.owner) }
         if has(["ипотек"]) { r.housing.formUnion([.mortgage]) }
@@ -127,6 +144,33 @@ enum AboutParser {
     }
 
     // MARK: разбор
+
+    private static let occupationWords: [(UserProfile.Occupation, [String])] = [
+        (.it, ["программист", "разработчик", "тестировщик", "айти", "devops", "сисадмин", "frontend", "backend", "разрабатываю"]),
+        (.trade, ["продавец", "торгу", "торговл", "магазин", "маркетплейс", "wildberries", "вайлдберриз", "ozon", "озон", "менеджер по продажам"]),
+        (.food, ["повар", "кафе", "ресторан", "бариста", "общепит", "кондитер", "пекар", "официант", "гостиниц", "отел"]),
+        (.education, ["учител", "преподават", "педагог", "воспитател", "репетитор"]),
+        (.health, ["врач", "медсестр", "медик", "фармацевт", "стоматолог", "клиник", "аптек"]),
+        (.construction, ["строител", "ремонт", "прораб", "архитектор", "отделк", "монтаж"]),
+        (.transport, ["таксист", "дальнобойщик", "курьер", "логист", "перевозк", "грузоперевозк", "экспедитор"]),
+        (.industry, ["завод", "инженер", "производств", "токар", "сварщик", "фабрик", "цех"]),
+        (.agriculture, ["фермер", "агроном", "сельск", "хозяйств", "животновод", "земледел"]),
+        (.finance, ["бухгалтер", "юрист", "банкир", "финансист", "страховщик", "аудитор", "адвокат", "нотариус"]),
+        (.publicService, ["госслужащ", "чиновник", "полицейск", "военнослужащ", "бюджетник", "муниципал", "росгвард"]),
+        (.beauty, ["парикмахер", "барбер", "маникюр", "косметолог", "массаж", "салон", "визажист", "бровист", "лашмейкер"]),
+        (.creative, ["дизайнер", "фотограф", "блогер", "журналист", "художник", "музыкант", "видеограф", "копирайтер", "контент"]),
+    ]
+
+    private static let sellsWords: [(UserProfile.Sells, [String])] = [
+        (.marked, ["маркировк", "обув", "одежд", "духи", "шин", "молочк", "велосипед", "фотоаппарат", "лекарств"]),
+        (.alcohol, ["алкогол", "пиво", "вино", "сигарет", "табак", "вейп", "кальян"]),
+        (.food, ["продукты", "продуктов", "выпечк", "фермерск", "доставк еды", "торты", "сладост"]),
+        (.online, ["маркетплейс", "wildberries", "вайлдберриз", "ozon", "озон", "интернет-магазин", "авито", "онлайн-торговл"]),
+        (.services, ["услуг", "консультац", "мастер", "обслуживан"]),
+        (.transport, ["перевозк", "грузоперевозк", "такси", "доставк"]),
+        (.rent, ["сдаю", "посуточ"]),
+        (.goods, ["товар", "продаю", "торгую", "опт", "розниц"]),
+    ]
 
     private static let negativeCues = ["не люблю", "не хочу", "не интересует", "не интересно", "надоел", "надоела", "надоело", "надоели", "не читаю", "без ", "устал от", "устала от", "бесит", "бесят"]
 

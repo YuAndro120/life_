@@ -10,7 +10,7 @@ struct OnboardingFlow: View {
     var body: some View {
         ZStack {
             switch step {
-            case .welcome: OnbWelcome { go(.about) }
+            case .welcome: OnbWelcome(start: { go(.about) }, restore: { Task { await model.restoreBackup() } }, startOver: { model.discardPendingBackup(); go(.about) })
             case .about: OnbAbout(back: { go(.welcome) }, next: { go(.profile) }, skip: skip)
             case .profile: OnbProfile(back: { go(.about) }, next: { go(.interests) }, skip: skip)
             case .interests: OnbInterests(back: { go(.profile) }, next: { go(.calm) })
@@ -87,7 +87,10 @@ private struct OnbScaffold<Content: View, Footer: View>: View {
 
 private struct OnbWelcome: View {
     @Environment(\.theme) private var theme
+    @Environment(AppModel.self) private var model
     let start: () -> Void
+    let restore: () -> Void
+    let startOver: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -110,8 +113,22 @@ private struct OnbWelcome: View {
             }
             .padding(.top, 32)
             Spacer(minLength: 16)
-            PrimaryButton(title: "Начать", trailing: "→", action: start)
-            Text("5 шагов · около минуты").metaStyle().frame(maxWidth: .infinity).padding(.top, 12)
+            if let backup = model.pendingBackup {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Нашли ваши настройки").font(theme.fonts.body(15, .semibold)).foregroundStyle(theme.ink)
+                    Text(ProfileSummary.line(profile: backup.profile, preferences: backup.preferences) ?? "Профиль и фильтры")
+                        .font(theme.fonts.body(14)).foregroundStyle(theme.muted).lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 12)
+                PrimaryButton(title: "Восстановить", trailing: "→", action: restore)
+                Button(action: startOver) {
+                    Text("Начать заново").font(theme.fonts.body(15, .medium)).foregroundStyle(theme.muted).frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.plain)
+            } else {
+                PrimaryButton(title: "Начать", trailing: "→", action: start)
+                Text("5 шагов · около минуты").metaStyle().frame(maxWidth: .infinity).padding(.top, 12)
+            }
         }
         .padding(.horizontal, 20).padding(.bottom, 16)
     }

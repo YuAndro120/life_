@@ -27,19 +27,35 @@ struct ProfileForm: View {
                     }
                 }
             }
-            group("04", "Жильё") {
+            group("04", "Сфера работы") {
+                ForEach(UserProfile.Occupation.allCases, id: \.self) { o in
+                    ChipButton(title: o.title, isOn: profile.occupations.contains(o)) {
+                        set { if !$0.occupations.insert(o).inserted { $0.occupations.remove(o) } }
+                    }
+                }
+            }
+            if profile.work.contains(.ip) || profile.work.contains(.selfemployed) {
+                group("05", "Что продаёшь") {
+                    ForEach(UserProfile.Sells.allCases, id: \.self) { x in
+                        ChipButton(title: x.title, isOn: profile.sells.contains(x)) {
+                            set { if !$0.sells.insert(x).inserted { $0.sells.remove(x) } }
+                        }
+                    }
+                }
+            }
+            group("06", "Жильё") {
                 ForEach(UserProfile.Housing.allCases, id: \.self) { h in
                     ChipButton(title: h.title, isOn: profile.housing.contains(h)) {
                         set { if !$0.housing.insert(h).inserted { $0.housing.remove(h) } }
                     }
                 }
             }
-            group("05", "Транспорт") {
+            group("07", "Транспорт") {
                 ChipButton(title: "Вожу авто", isOn: profile.drives == true) { set { $0.drives = $0.drives == true ? nil : true } }
                 ChipButton(title: "Не вожу", isOn: profile.drives == false) { set { $0.drives = $0.drives == false ? nil : false } }
             }
             VStack(alignment: .leading, spacing: 12) {
-                heading("06", "Регион")
+                heading("08", "Регион")
                 Button { showRegions = true } label: {
                     HStack {
                         Text("Для региональных законов").font(theme.fonts.body(15)).foregroundStyle(theme.ink)

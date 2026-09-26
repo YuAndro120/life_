@@ -13,6 +13,7 @@ final class AppModel {
     /// Запасной источник для первого запуска без сети и без кэша (в DEBUG — встроенные тестовые данные).
     private let fallback: (any ContentSource)?
     private let notifier: any NotificationScheduling
+    private let backupStore: any BackupStoring
 
     private(set) var feed: Feed?
     private(set) var laws: [Law] = []
@@ -29,24 +30,30 @@ final class AppModel {
     private(set) var undo: FeedbackAction?
     /// Текущее время; обновляется раз в минуту, чтобы тема и «следующий выпуск» не устаревали.
     var now: Date
+    /// Копия настроек, найденная при первом запуске (после переустановки): предлагаем восстановить.
+    private(set) var pendingBackup: ProfileBackup?
 
     init(
         context: ModelContext,
         source: any ContentSource = FixtureContentSource(),
         fallback: (any ContentSource)? = nil,
         notifier: any NotificationScheduling = NoopNotificationScheduler(),
+        backup: any BackupStoring = NoopBackupStore(),
         now: Date = .now
     ) {
         self.context = context
         self.source = source
         self.fallback = fallback
         self.notifier = notifier
+        self.backupStore = backup
         self.now = now
         self.profile = Self.fetchOrCreate(Profile.self, in: context) { Profile() }
         self.settings = Self.fetchOrCreate(FilterSettings.self, in: context) { FilterSettings() }
         self.counter = Self.fetchOrCreate(EditionCounter.self, in: context) { EditionCounter() }
         self.reminderLawIds = Set(((try? context.fetch(FetchDescriptor<Reminder>())) ?? []).map(\.lawId))
         self.cache = ContentCache(context: context)
+        if !profile.onboardingCompleted, let data = backup.read() { pendingBackup = ProfileBackup.decode(data) }
+        writeBackup() // телефон, настроенный до появления копии, получает её при первом запуске
         // Показываем сохранённый выпуск сразу, до ответа сети.
         if let snapshot = cache.load() {
             feed = snapshot.feed
@@ -177,7 +184,48 @@ final class AppModel {
 
     // MARK: настройки
 
-    func save() { try? context.save() }
+    func save() {
+        try? context.save()
+        writeBackup()
+    }
+
+    /// Сохраняет копию настроек. До конца онбординга не пишем, чтобы пустой профиль не затёр старую копию.
+    private func writeBackup() {
+        guard profile.onboardingCompleted, settings.backupEnabled else { return }
+        let backup = ProfileBackup.make(profile: profile.snapshot, preferences: settings.preferences, settings: settings, at: now)
+        if let data = backup.encoded() { backupStore.write(data) }
+    }
+
+    /// Применяет найденную копию и завершает онбординг. Возвращает false, если копии нет.
+    @discardableResult
+    func restoreBackup() async -> Bool {
+        guard let b = pendingBackup else { return false }
+        profile.snapshot = b.profile
+        settings.preferences = b.preferences
+        settings.theme = b.theme
+        settings.autoDusk = b.autoDusk
+        settings.schedule = b.schedule
+        settings.morningMinutes = b.morningMinutes
+        settings.eveningMinutes = b.eveningMinutes
+        pendingBackup = nil
+        await completeOnboarding()
+        return true
+    }
+
+    /// Отказ от найденной копии («начать заново»): новая копия перезапишет старую после онбординга.
+    func discardPendingBackup() { pendingBackup = nil }
+
+    /// Включает или выключает резервную копию; при выключении копия удаляется из связки ключей.
+    func setBackup(enabled: Bool) {
+        settings.backupEnabled = enabled
+        try? context.save()
+        if enabled { writeBackup() } else {
+            backupStore.delete()
+            pendingBackup = nil
+        }
+    }
+
+    var hasBackup: Bool { backupStore.read() != nil }
 
     /// Вызывать после изменения расписания.
     func scheduleChanged() {

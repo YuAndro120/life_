@@ -16,6 +16,8 @@ enum AudienceMatcher {
             if w == .ip { tags.insert("work:ip_usn") }
         }
         for h in profile.housing { tags.insert("housing:\(h.rawValue)") }
+        for o in profile.occupations { tags.insert("industry:\(o.rawValue)") }
+        for x in profile.sells { tags.insert("sells:\(x.rawValue)") }
         if profile.drives == true { tags.insert("transport:driver") }
         if let r = profile.regionCode { tags.insert("region:\(r)") }
         if isMilitaryRegistered(profile) { tags.insert(militaryRegistered) }

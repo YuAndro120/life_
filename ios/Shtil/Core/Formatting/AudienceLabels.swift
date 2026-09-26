@@ -43,6 +43,41 @@ extension UserProfile.Housing {
 }
 
 /// Подписи аудитории закона для карточек, календаря и блока «Тебе».
+extension UserProfile.Occupation {
+    var title: String {
+        switch self {
+        case .it: "IT и разработка"
+        case .trade: "Торговля"
+        case .food: "Общепит и гостиницы"
+        case .education: "Образование"
+        case .health: "Медицина"
+        case .construction: "Строительство и ремонт"
+        case .transport: "Транспорт и логистика"
+        case .industry: "Производство"
+        case .agriculture: "Сельское хозяйство"
+        case .finance: "Финансы и право"
+        case .publicService: "Госслужба и бюджет"
+        case .beauty: "Красота и услуги"
+        case .creative: "Творчество и медиа"
+        }
+    }
+}
+
+extension UserProfile.Sells {
+    var title: String {
+        switch self {
+        case .goods: "Товары"
+        case .marked: "Маркированные товары"
+        case .alcohol: "Алкоголь и табак"
+        case .food: "Продукты и еда"
+        case .online: "Через маркетплейсы"
+        case .services: "Услуги"
+        case .transport: "Перевозки"
+        case .rent: "Аренда и недвижимость"
+        }
+    }
+}
+
 enum AudienceLabels {
     static func label(forTag tag: String) -> String {
         switch tag {
@@ -56,6 +91,8 @@ enum AudienceLabels {
         case "housing:owner": "Владельцы жилья"
         case "housing:mortgage": "Ипотека"
         case "transport:driver": "Водители"
+        case let t where t.hasPrefix("industry:"): UserProfile.Occupation(rawValue: String(t.dropFirst(9)))?.title ?? "Отрасль"
+        case let t where t.hasPrefix("sells:"): UserProfile.Sells(rawValue: String(t.dropFirst(6))).map { "Продают: \($0.title.lowercased())" } ?? "Торговля"
         case "military:registered": "Воинский учёт"
         case "gender:male": "Мужчины"
         case "gender:female": "Женщины"
@@ -98,6 +135,8 @@ enum AudienceLabels {
             case "gender:male": add("Мужчина")
             case "gender:female": add("Женщина")
             default:
+                if tag.hasPrefix("industry:"), let o = UserProfile.Occupation(rawValue: String(tag.dropFirst(9))) { add(o.title) }
+                if tag.hasPrefix("sells:"), let x = UserProfile.Sells(rawValue: String(tag.dropFirst(6))) { add("Продаю: \(x.title.lowercased())") }
                 if tag.hasPrefix("age:"), let a = profile.age { add(a.title) }
                 if tag.hasPrefix("region:"), let r = Region.title(for: profile.regionCode) { add(r) }
             }

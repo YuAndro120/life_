@@ -15,6 +15,7 @@ struct ShtilApp: App {
                 source: Self.makeSource(),
                 fallback: Self.makeFallback(),
                 notifier: DebugLaunch.inMemory ? NoopNotificationScheduler() : SystemNotificationScheduler(),
+                backup: DebugLaunch.inMemory ? DebugLaunch.backupStore : KeychainBackupStore(),
                 now: DebugLaunch.fixedNow ?? .now
             )
             DebugLaunch.apply(to: model)

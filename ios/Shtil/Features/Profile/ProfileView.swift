@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(\.theme) private var theme
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         ScrollView {
@@ -19,6 +20,15 @@ struct ProfileView: View {
 
                 SectionTitle(index: "07", title: "Оформление").padding(.top, 40).padding(.bottom, 16)
                 ThemePicker()
+                SectionTitle(index: "08", title: "Резервная копия").padding(.top, 40).padding(.bottom, 8)
+                Text("Профиль и фильтры хранятся в связке ключей iOS: она зашифрована и переживает переустановку. С iCloud-связкой ключей настройки переедут и на новый телефон. На сервер ничего не уходит.")
+                    .font(theme.fonts.body(14)).lineSpacing(3).foregroundStyle(theme.muted)
+                SwitchRow(
+                    title: "Хранить копию настроек",
+                    hint: "Выключите, чтобы стереть копию из связки ключей",
+                    isOn: Binding(get: { model.settings.backupEnabled }, set: { model.setBackup(enabled: $0) })
+                )
+                .padding(.top, 6)
                 Text("Профиль хранится только на этом телефоне. Сервер не знает, кто ты и что читаешь.")
                     .font(theme.id == .sage ? theme.fonts.body(13) : ThemeFonts.mono(11)).lineSpacing(4)
                     .foregroundStyle(theme.muted).padding(.top, 28)
