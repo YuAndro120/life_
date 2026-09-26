@@ -9,8 +9,8 @@ export function button({ title, trailing = '→', onClick, disabled = false }) {
 
 export const linkButton = (title, onClick) => h('button', { class: 'link-btn', type: 'button', onClick }, title);
 
-export function chip({ title, on = false, removable = false, onClick, cls = '', label }) {
-  return h('button', { class: `chip${removable ? ' removable' : ''} ${cls}`.trim(), type: 'button', 'aria-pressed': String(on), 'aria-label': label, onClick },
+export function chip({ title, on = false, removable = false, onClick, cls = '', label, state }) {
+  return h('button', { class: `chip${removable ? ' removable' : ''} ${cls}`.trim(), type: 'button', 'aria-pressed': String(on), 'aria-label': label, 'data-state': state, onClick },
     title, removable ? h('span', { class: 'x', 'aria-hidden': 'true' }, '×') : null);
 }
 

@@ -81,15 +81,29 @@ try {
     assert.ok(!(await ev(`[...document.querySelectorAll('.chips .chip')].some((c) => c.textContent.startsWith('Татарстан') && c.getAttribute('aria-label')?.includes('убрать'))`)));
     await must('Дальше');
   });
-  await step('профиль подставлен, дальше по шагам до сборки выпуска', async () => {
-    await waitFor(`document.body.innerText.includes('Что про тебя важно знать')`, 'профиль');
+  await step('«Немного о тебе»: ответы подставлены, сфера появляется после выбора работы', async () => {
+    await waitFor(`document.body.innerText.includes('Немного о тебе')`, 'экран о тебе');
     assert.ok(await ev(`[...document.querySelectorAll('.chip')].some((c) => c.textContent.trim() === 'ИП' && c.getAttribute('aria-pressed') === 'true')`), 'ИП должен быть выбран');
+    assert.ok((await bodyText()).includes('Сфера'), 'у ИП спрашиваем сферу');
+    assert.ok((await bodyText()).includes('Юриспруденция') && (await bodyText()).includes('Финансы и бухгалтерия'), 'финансы и право раздельно');
+    await must('Ещё о себе');
+    await waitFor(`document.body.innerText.includes('Жильё')`, 'раскрытый блок');
     await must('Дальше');
-    await waitFor(`document.body.innerText.includes('Что тебе интересно')`, 'интересы');
+  });
+  await step('«Что читать»: тап по теме идёт по кругу интересно → скрыто → обычно', async () => {
+    await waitFor(`document.body.innerText.includes('Что читать')`, 'экран тем');
+    const state = () => ev(`document.querySelector('.chip[aria-label^="Наука"]').dataset.state`);
+    assert.equal(await state(), '');
+    await ev(`document.querySelector('.chip[aria-label^="Наука"]').click()`);
+    assert.equal(await state(), 'interest');
+    await ev(`document.querySelector('.chip[aria-label^="Наука"]').click()`);
+    assert.equal(await state(), 'hidden');
+    await ev(`document.querySelector('.chip[aria-label^="Наука"]').click()`);
+    assert.equal(await state(), '');
     await must('Дальше');
-    await waitFor(`document.body.innerText.includes('Что тебе не показывать')`, 'что не показывать');
-    await must('Дальше');
-    await waitFor(`document.body.innerText.includes('Как будет выглядеть выпуск')`, 'тема');
+  });
+  await step('оформление и сборка первого выпуска', async () => {
+    await waitFor(`document.body.innerText.includes('Как оформить')`, 'тема');
     await ev(`[...document.querySelectorAll('.theme-opt')].find((c) => c.textContent.includes('Сумерки')).click()`);
     assert.equal(await ev('document.documentElement.dataset.theme'), 'dusk');
     await ev(`[...document.querySelectorAll('.theme-opt')].find((c) => c.textContent.includes('Бумага')).click()`);

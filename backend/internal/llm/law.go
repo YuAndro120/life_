@@ -20,7 +20,7 @@ var AudienceTags = []string{
 	"transport:driver", "military:registered",
 	// Сфера работы и что продаёт ИП: теги совпадают с ответами профиля в приложении.
 	"industry:it", "industry:trade", "industry:food", "industry:education", "industry:health", "industry:construction",
-	"industry:transport", "industry:industry", "industry:agriculture", "industry:finance", "industry:publicService",
+	"industry:transport", "industry:industry", "industry:agriculture", "industry:finance", "industry:legal", "industry:publicService",
 	"industry:beauty", "industry:creative",
 	"sells:goods", "sells:marked", "sells:alcohol", "sells:food", "sells:online", "sells:services", "sells:transport", "sells:rent",
 }

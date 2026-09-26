@@ -29,7 +29,7 @@ export const HOUSINGS = [{ id: 'renter', title: 'Снимаю' }, { id: 'owner',
 export const OCCUPATIONS = [
   ['it', 'IT и разработка'], ['trade', 'Торговля'], ['food', 'Общепит и гостиницы'], ['education', 'Образование'], ['health', 'Медицина'],
   ['construction', 'Строительство и ремонт'], ['transport', 'Транспорт и логистика'], ['industry', 'Производство'],
-  ['agriculture', 'Сельское хозяйство'], ['finance', 'Финансы и право'], ['publicService', 'Госслужба и бюджет'],
+  ['agriculture', 'Сельское хозяйство'], ['finance', 'Финансы и бухгалтерия'], ['legal', 'Юриспруденция'], ['publicService', 'Госслужба и бюджет'],
   ['beauty', 'Красота и услуги'], ['creative', 'Творчество и медиа'],
 ].map(([id, title]) => ({ id, title }));
 export const SELLS = [

@@ -224,3 +224,17 @@ textarea.field.big { min-height: 132px; background: var(--card); border-radius: 
 .chip:active, .segments button:active, .switch-row:active, .list-btn:active, .todo:active, .link-row:active, .cal-row:active { opacity: 0.55; }
 .story { content-visibility: auto; contain-intrinsic-size: auto 150px; }
 #app .scroll { will-change: scroll-position; }
+
+/* Онбординг: компактные экраны */
+.h-onb { font-size: 34px; margin-top: 18px; }
+.lead.short { margin-top: 8px; font-size: 15px; }
+.ask { margin-top: 22px; } .ask > .q { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+.ask .sub { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+.more-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 52px; margin-top: 18px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 500; }
+.more-btn .m { color: var(--muted); font-size: 13px; }
+.chip[data-state='interest'] { background: var(--accent); color: var(--button-text); border-color: var(--accent); }
+.chip[data-state='hidden'] { color: var(--muted); text-decoration: line-through; background: transparent; border-style: dashed; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.region-row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 56px; padding: 0 16px; border-radius: var(--card-radius); background: var(--card); border: 1px solid var(--line); }
+.region-row .v { font-size: 16px; font-weight: 600; } .region-row .l { font-size: 12px; color: var(--muted); }

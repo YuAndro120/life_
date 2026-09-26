@@ -1,10 +1,10 @@
 import { h } from './dom.js';
-import { chip, button, linkButton, rule, screenTitle, sectionTitle, segments, switchRow } from './components.js';
-import { profileForm, openRegionSheet } from './profile-form.js';
+import { chip, button, linkButton, rule } from './components.js';
+import { openRegionSheet } from './profile-form.js';
 import { themePicker, openBackupSheet } from './profile.js';
 import { aboutChips, applyAbout, parseAbout, withoutChips } from '../core/about.js';
-import { COUNTRIES, TOPICS, topicTitle } from '../core/taxonomy.js';
-import { toggleInterest } from '../core/filter.js';
+import { AGES, COUNTRIES, GENDERS, HOUSINGS, OCCUPATIONS, SELLS, TOPICS, WORKS, topicTitle } from '../core/taxonomy.js';
+import { toggleInterest, toggleStopTopic } from '../core/filter.js';
 import { currentEdition } from './today.js';
 import { plural } from '../core/dates.js';
 import { regionTitle } from '../core/regions.js';
@@ -14,12 +14,11 @@ const EXAMPLES = [
   'Студентка из Новосибирска, снимаю квартиру, интересуют наука и кино',
   'Работаю по найму, ипотека, не люблю футбол и сплетни',
 ];
-const HIDEABLE = ['politics', 'crime', 'incidents', 'disasters', 'showbiz', 'sport', 'crypto'];
 
 function top(current, back) {
   return h('div', { style: 'margin-top:8px' },
-    h('div', { class: 'row' }, h('button', { class: 'tap', type: 'button', onClick: back, style: 'font-size:15px;font-weight:500' }, '← Назад'), h('span', { class: 'meta' }, `0${current} / 05`)),
-    h('div', { class: 'progress', 'aria-hidden': 'true' }, [1, 2, 3, 4, 5].map((i) => h('i', { class: i <= current ? 'on' : '' }))));
+    h('div', { class: 'row' }, h('button', { class: 'tap', type: 'button', onClick: back, style: 'font-size:15px;font-weight:500' }, '← Назад'), h('span', { class: 'meta' }, `0${current} / 04`)),
+    h('div', { class: 'progress', 'aria-hidden': 'true' }, [1, 2, 3, 4].map((i) => h('i', { class: i <= current ? 'on' : '' }))));
 }
 const footer = (...nodes) => h('div', { class: 'footer' }, nodes);
 const privacy = (text) => h('div', { style: 'display:flex;gap:10px;align-items:flex-start;margin-top:24px' }, h('span', { class: 'dot', style: 'margin-top:8px' }), h('p', { style: 'font-size:13px;line-height:1.5;color:var(--muted)' }, text));
@@ -30,12 +29,9 @@ export function onboardingScreen(ctx) {
   const skip = () => { ctx.store.completeOnboarding(); ctx.nav('/'); };
   switch (local.step) {
     case 'about': return aboutStep(ctx, local, go, skip);
-    case 'profile': return h('section', { class: 'screen' }, top(2, () => go('about')), screenTitle('Что про тебя важно знать', '?'),
-      h('p', { class: 'lead' }, 'Покажем только те законы и изменения, которые касаются тебя.'), h('div', { style: 'margin-top:28px' }, profileForm(ctx)),
-      privacy('Профиль хранится только в этом браузере. Сервер не знает, кто ты и что читаешь.'), footer(button({ title: 'Дальше', onClick: () => go('interests') }), linkButton('Пропустить', skip)));
-    case 'interests': return interestsStep(ctx, go);
-    case 'calm': return calmStep(ctx, go);
-    case 'theme': return themeStep(ctx, go);
+    case 'who': return whoStep(ctx, local, go, skip);
+    case 'read': return readStep(ctx, go, skip);
+    case 'look': return lookStep(ctx, go);
     case 'building': return buildingStep(ctx, local);
     default: return welcomeStep(ctx, go);
   }
@@ -48,7 +44,7 @@ function welcomeStep(ctx, go) {
     h('h1', { class: 'title welcome-mast' }, 'Штиль', h('span', { class: 'mark' }, '.')),
     h('h2', { class: 'title welcome-lines' }, 'Новости без шума.', h('span', { class: 'm' }, 'Законы тебе в помощь.')),
     h('div', { style: 'margin-top:32px' }, point('01', 'Два выпуска в день, каждый можно дочитать до конца'), point('02', 'Изменения в законах, которые касаются именно тебя'), point('03', 'Настройки живут в браузере, сервер не знает, кто ты')),
-    footer(button({ title: 'Начать', onClick: () => go('about') }), h('p', { class: 'meta', style: 'text-align:center;margin-top:10px' }, '5 шагов · около минуты'),
+    footer(button({ title: 'Начать', onClick: () => go('about') }), h('p', { class: 'meta', style: 'text-align:center;margin-top:10px' }, '4 шага · около минуты'),
       linkButton('У меня есть копия настроек', () => openBackupSheet(ctx, 'restore', () => ctx.nav('/')))));
 }
 
@@ -77,10 +73,10 @@ function aboutStep(ctx, local, go, skip) {
     const { profile, prefs } = applyAbout(parsed(), ctx.store.state.profile, ctx.store.state.prefs);
     ctx.store.setProfile(profile);
     ctx.store.setPrefs(prefs);
-    go('profile');
+    go('who');
   };
-  const node = h('section', { class: 'screen' }, top(1, () => go('welcome')), screenTitle('Расскажи о себе', '?'),
-    h('p', { class: 'lead' }, 'Пара слов: где живёшь, чем занимаешься, что любишь и что надоело. Лента подстроится сразу.'),
+  const node = h('section', { class: 'screen' }, top(1, () => go('welcome')), h('h1', { class: 'title h-onb' }, 'Расскажи о себе', h('span', { class: 'mark' }, '?')),
+    h('p', { class: 'lead short' }, 'Где живёшь, чем занимаешься, что любишь. Лента подстроится сразу.'),
     h('div', { style: 'margin-top:24px' }, textarea), chipsBox,
     privacy('Текст разбирается в этом браузере и никуда не отправляется. Его даже не сохраняем: остаются только плашки.'),
     footer(h('button', { class: 'btn', type: 'button', onClick: save }, cont, h('span', { 'aria-hidden': 'true' }, '→')), linkButton('Пропустить', skip)));
@@ -88,48 +84,72 @@ function aboutStep(ctx, local, go, skip) {
   return node;
 }
 
-function interestsStep(ctx, go) {
+const toggleIn = (list, id) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+
+const ask = (title, sub, ...body) => h('div', { class: 'ask' }, h('div', { class: 'q' }, title, sub ? h('span', { class: 'sub' }, sub) : null), body);
+
+/** «Немного о тебе»: сначала работа, возраст и регион; остальное появляется по мере ответов или под «Ещё о себе». */
+function whoStep(ctx, local, go, skip) {
+  const { store } = ctx;
+  const p = store.state.profile;
+  const set = (patch) => store.setProfile(patch);
+  const showSphere = p.work.some((w) => ['employee', 'ip', 'selfemployed'].includes(w));
+  const showSells = p.work.includes('ip') || p.work.includes('selfemployed');
+  const chips = (list, current, key) => h('div', { class: 'chips' }, list.map((x) => chip({ title: x.title, on: current.includes(x.id), onClick: () => set({ [key]: toggleIn(current, x.id) }) })));
+  const single = (list, current, key) => h('div', { class: 'chips' }, list.map((x) => chip({ title: x.title, on: current === x.id, onClick: () => set({ [key]: current === x.id ? null : x.id }) })));
+  const region = regionTitle(p.regionCode);
+  return h('section', { class: 'screen' }, top(2, () => go('about')),
+    h('h1', { class: 'title h-onb' }, 'Немного о тебе'),
+    h('p', { class: 'lead short' }, 'Всё необязательно. Чем точнее, тем меньше лишних законов.'),
+    ask('Чем занимаешься', null, chips(WORKS, p.work, 'work')),
+    showSphere ? ask('Сфера', null, chips(OCCUPATIONS, p.occupations, 'occupations')) : null,
+    showSells ? ask('Что продаёшь', null, chips(SELLS, p.sells, 'sells')) : null,
+    ask('Возраст', null, single(AGES, p.age, 'age')),
+    h('div', { class: 'ask' }, h('button', { class: 'region-row', type: 'button', onClick: () => openRegionSheet(ctx) },
+      h('span', null, h('div', { class: 'l' }, 'Регион'), h('div', { class: 'v' }, region ?? 'Не выбран')), h('span', { class: 'meta accent' }, region ? 'Изменить' : 'Выбрать →'))),
+    h('button', { class: 'more-btn', type: 'button', 'aria-expanded': String(Boolean(local.more)), onClick: () => { local.more = !local.more; ctx.rerender(); } },
+      h('span', null, 'Ещё о себе'), h('span', { class: 'm' }, local.more ? 'Свернуть' : 'пол, жильё, авто ▾')),
+    local.more ? h('div', null,
+      ask('Пол', null, single(GENDERS, p.gender, 'gender')),
+      ask('Жильё', null, chips(HOUSINGS, p.housing, 'housing')),
+      ask('Транспорт', null, h('div', { class: 'chips' },
+        chip({ title: 'Вожу авто', on: p.drives === true, onClick: () => set({ drives: p.drives === true ? null : true }) }),
+        chip({ title: 'Не вожу', on: p.drives === false, onClick: () => set({ drives: p.drives === false ? null : false }) })))) : null,
+    footer(button({ title: 'Дальше', onClick: () => go('read') }), linkButton('Пропустить', skip)));
+}
+
+/** Тап по теме: интересно → скрыть → как обычно (и по кругу). */
+export function cycleTopic(prefs, id) {
+  if (prefs.interests.includes(id)) return toggleStopTopic(prefs, id);
+  if (prefs.stopTopics.includes(id)) return { ...prefs, stopTopics: prefs.stopTopics.filter((x) => x !== id) };
+  return toggleInterest(prefs, id);
+}
+
+/** «Что читать»: одна сетка тем вместо двух экранов и компактная строка изданий. */
+function readStep(ctx, go, skip) {
   const { store } = ctx;
   const { prefs } = store.state;
-  return h('section', { class: 'screen' }, top(3, () => go('profile')), screenTitle('Что тебе интересно', '?'),
-    h('p', { class: 'lead' }, 'Сюжеты по выбранным темам пойдут первыми. Всё можно поменять в фильтрах.'),
-    sectionTitle('01', 'Откуда новости', 'paper'),
-    h('div', { class: 'chips', style: 'margin-top:14px' }, COUNTRIES.map((c) => chip({ title: c.title, on: prefs.countries.includes(c.id), onClick: () => {
+  const state = (id) => (prefs.interests.includes(id) ? 'interest' : prefs.stopTopics.includes(id) ? 'hidden' : '');
+  const title = (t) => (state(t.id) === 'hidden' ? `✕ ${t.title}` : t.title);
+  return h('section', { class: 'screen' }, top(3, () => go('who')),
+    h('h1', { class: 'title h-onb' }, 'Что читать', h('span', { class: 'mark' }, '?')),
+    h('p', { class: 'lead short' }, 'Тап по теме: интересно, ещё тап: скрыть.'),
+    ask('Издания', null, h('div', { class: 'chips' }, COUNTRIES.map((c) => chip({ title: c.title, on: prefs.countries.includes(c.id), onClick: () => {
       const on = prefs.countries.includes(c.id);
       if (on && prefs.countries.length === 1) return;
       store.setPrefs({ countries: on ? prefs.countries.filter((x) => x !== c.id) : [...prefs.countries, c.id] });
-    } }))),
-    h('p', { style: 'font-size:13px;color:var(--muted);margin-top:10px' }, 'Пересказ иностранных изданий всегда по-русски.'),
-    sectionTitle('02', 'Темы', 'paper'),
-    h('div', { class: 'chips', style: 'margin-top:14px' }, TOPICS.map((t) => chip({ title: t.title, on: prefs.interests.includes(t.id), onClick: () => store.setPrefs((p) => toggleInterest(p, t.id)) }))),
-    footer(button({ title: 'Дальше', onClick: () => go('calm') })));
+    } })))),
+    ask('Темы', null, h('div', { class: 'chips' }, TOPICS.map((t) => chip({ title: title(t), state: state(t.id), label: `${t.title}: ${{ interest: 'интересно', hidden: 'скрыто', '': 'как обычно' }[state(t.id)]}`, onClick: () => store.setPrefs((p) => cycleTopic(p, t.id)) })))),
+    h('div', { class: 'legend', 'aria-hidden': 'true' },
+      h('span', null, h('i', { style: 'background:var(--accent)' }), 'интересно'), h('span', null, h('i', { style: 'border:1.5px dashed var(--muted)' }), 'скрыто'), h('span', null, h('i', { style: 'border:1.5px solid var(--chip-border,var(--line))' }), 'как обычно')),
+    footer(button({ title: 'Дальше', onClick: () => go('look') }), linkButton('Пропустить', skip)));
 }
 
-function calmStep(ctx, go) {
-  const { store } = ctx;
-  const { prefs } = store.state;
-  const strict = !prefs.infoTypes.includes('rumor') && !prefs.infoTypes.includes('forecast');
-  const mode = (id, title, hint) => h('div', null, h('button', { class: 'row', type: 'button', style: 'width:100%;min-height:64px;gap:14px', 'aria-pressed': String(prefs.heavyMode === id), onClick: () => store.setPrefs({ heavyMode: id }) },
-    h('span', { style: `width:22px;height:22px;border-radius:50%;flex:none;border:${prefs.heavyMode === id ? '7px solid var(--accent)' : '1.5px solid var(--muted)'}` }),
-    h('span', { style: 'flex:1' }, h('div', { style: 'font-size:17px;font-weight:500' }, title), h('div', { style: 'font-size:13px;color:var(--muted)' }, hint))), rule());
-  return h('section', { class: 'screen' }, top(4, () => go('interests')), screenTitle('Что тебе не показывать', '?'),
-    h('p', { class: 'lead' }, 'Всё это можно поменять потом в фильтрах.'),
-    sectionTitle('01', 'Скрыть темы', 'paper'),
-    h('div', { class: 'chips', style: 'margin-top:14px' }, HIDEABLE.map((id) => chip({ title: topicTitle(id), on: prefs.stopTopics.includes(id), removable: true, onClick: () => store.setPrefs((p) => (p.stopTopics.includes(id) ? { ...p, stopTopics: p.stopTopics.filter((x) => x !== id) } : { ...p, stopTopics: [...p.stopTopics, id], interests: p.interests.filter((x) => x !== id) })) }))),
-    sectionTitle('02', 'Тяжёлые новости', 'paper'),
-    h('div', { style: 'margin-top:8px' }, mode('hide', 'Скрывать', 'Не показывать совсем'), mode('fold', 'Сворачивать', 'Одна нейтральная сводка в конце выпуска'), mode('show', 'Показывать', 'Как обычные сюжеты')),
-    sectionTitle('03', 'Тон', 'paper'),
-    switchRow({ title: 'Без слухов и прогнозов', hint: 'Только факты и официальные решения', on: strict,
-      onChange: (v) => store.setPrefs((p) => ({ ...p, infoTypes: v ? p.infoTypes.filter((t) => t !== 'rumor' && t !== 'forecast') : [...new Set([...p.infoTypes, 'rumor', 'forecast'])] })) }),
-    footer(button({ title: 'Дальше', onClick: () => go('theme') })));
-}
-
-function themeStep(ctx, go) {
-  const { store } = ctx;
-  return h('section', { class: 'screen' }, top(5, () => go('calm')), screenTitle('Как будет выглядеть выпуск', '?'),
-    h('p', { class: 'lead' }, 'Выбери тему, экран сразу покажет её. Сменить можно в любой момент.'), themePicker(ctx),
-    h('p', { style: 'font-size:15px;font-weight:500;margin:20px 0 10px' }, 'Когда ждать выпуск'),
-    segments({ options: [['both', 'Утро и вечер'], ['am', 'Только утро'], ['pm', 'Только вечер']], value: store.state.settings.schedule, onChange: (v) => store.setSettings({ schedule: v }) }),
+function lookStep(ctx, go) {
+  return h('section', { class: 'screen' }, top(4, () => go('read')),
+    h('h1', { class: 'title h-onb' }, 'Как оформить', h('span', { class: 'mark' }, '?')),
+    h('p', { class: 'lead short' }, 'Выбери тему, экран сразу покажет её. Сменить можно в любой момент.'),
+    themePicker(ctx),
     footer(button({ title: 'Собрать первый выпуск', onClick: () => go('building') })));
 }
 

@@ -148,6 +148,12 @@ test('плашки убираются, применение не стирает 
   assert.ok(aboutChips(r).length >= 3);
 });
 
+test('финансы и право — разные сферы', () => {
+  assert.deepEqual(parseAbout('Я юрист').occupations, ['legal']);
+  assert.deepEqual(parseAbout('Работаю бухгалтером').occupations, ['finance']);
+  assert.deepEqual(parseAbout('Я адвокат, а жена бухгалтер').occupations.sort(), ['finance', 'legal']);
+});
+
 test('строка «Лента для»', () => {
   const p = profile({ work: ['ip'], occupations: ['trade'], drives: true, regionCode: '16' });
   assert.equal(profileSummary(p, prefs({ interests: ['space'] })), 'Татарстан · ИП · Торговля · водитель · Космос');
