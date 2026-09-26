@@ -210,16 +210,3 @@ textarea.field.big { min-height: 132px; background: var(--card); border-radius: 
 /* Без полос прокрутки везде */
 * { scrollbar-width: none; -ms-overflow-style: none; }
 *::-webkit-scrollbar { display: none; width: 0; height: 0; }
-
-/* Статус-бар прозрачный (индикаторы iOS всегда белые), поэтому под ним своя заливка: тёмная у светлых тем, фон у «Сумерек» */
-:root, [data-theme='paper'], [data-theme='sage'] { --cap: #1e211f; }
-[data-theme='paper'] { --cap: #22211e; }
-[data-theme='dusk'] { --cap: var(--bg); }
-#statusbar { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--cap); z-index: 60; pointer-events: none; }
-
-/* Страница «Как установить» */
-.install-steps { display: grid; gap: 10px; margin-top: 14px; }
-.install-step { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--card-radius); background: var(--card); border: 1px solid var(--line); }
-.install-step .num { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--button-text); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex: none; }
-.install-step .txt { flex: 1; } .install-step .t { font-size: 16px; font-weight: 600; line-height: 1.25; } .install-step .h { font-size: 13px; line-height: 1.45; color: var(--muted); margin-top: 3px; }
-.install-step .ico { color: var(--accent); flex: none; display: inline-flex; }

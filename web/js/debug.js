@@ -15,8 +15,7 @@ export function installDebugPanel() {
       `visual ${vv ? `${Math.round(vv.width)}×${Math.round(vv.height)} @${Math.round(vv.offsetTop)}` : '—'}  dpr ${devicePixelRatio}`,
       `safe top ${cs.paddingTop} bottom ${cs.paddingBottom}`,
       `standalone ${navigator.standalone === true}`,
-      `#app ${rect('#app')}`, `.scroll ${rect('#scroll')}`, `.bar ${rect('#app .bar')}`, `#statusbar ${rect('#statusbar')}`,
-      `cap ${getComputedStyle(document.getElementById('statusbar')).backgroundColor}`,
+      `#app ${rect('#app')}`, `.scroll ${rect('#scroll')}`, `.bar ${rect('#app .bar')}`,
     ].join('\n');
   };
   const toggle = () => {
