@@ -15,7 +15,15 @@ import Testing
         #expect(PoliticalMarkers.matches(story("ЗЕЛЕНСКОГО пригласили на саммит")))
     }
 
+    @Test func detectsListsAndAuthorities() {
+        #expect(PoliticalMarkers.matches(story("Минюст включил проект в реестр иноагентов")))
+        #expect(PoliticalMarkers.matches(story("Депутаты приняли заявление о выборах")))
+        #expect(PoliticalMarkers.matches(story("Введены новые санкции против компаний")))
+        #expect(PoliticalMarkers.matches(story("МИД России вызвал посла")))
+    }
+
     @Test func doesNotMatchUnrelatedWords() {
+        #expect(!PoliticalMarkers.matches(story("Стоимость мидий выросла на рынке")))
         #expect(!PoliticalMarkers.matches(story("В парке открыли новый трамплин для прыжков")))
         #expect(!PoliticalMarkers.matches(story("Ключевая ставка сохранена на уровне 16 процентов")))
         #expect(!PoliticalMarkers.matches(story("NASA объявило состав экипажа Crew-14")))
