@@ -188,13 +188,15 @@ if (navigator.storage?.persist) navigator.storage.persist().then((ok) => { ctx.l
 // Сервис-воркер кэширует оболочку: повторный запуск идёт без сети. Проверка обновления при каждом возвращении в приложение (не чаще раза в минуту).
 if ('serviceWorker' in navigator && !isDev) {
   let lastCheck = 0;
-  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
+  // Установка воркера скачивает всю оболочку: делаем это после загрузки страницы, чтобы не отнимать канал у первого экрана.
+  const registerWorker = () => navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden || Date.now() - lastCheck < 60_000) return;
       lastCheck = Date.now();
       registration.update().catch(() => {});
     });
   }).catch(() => {});
+  if (document.readyState === 'complete') setTimeout(registerWorker, 500); else window.addEventListener('load', () => setTimeout(registerWorker, 800), { once: true });
 }
 
 // iOS в режиме прозрачного статус-бара отдаёт странице окно на высоту статус-бара короче экрана: внизу остаётся полоса, где ничего не рисуется.
@@ -217,4 +219,6 @@ window.addEventListener('orientationchange', () => setTimeout(measureDeadZone, 3
 
 installDebugPanel();
 render(false);
-refresh(true).then(() => render(true));
+// Первый экран не ждёт сеть: ленту запрашиваем после загрузки страницы, когда код и шрифты уже получены.
+const startRefresh = () => refresh(true).then(() => render(true));
+if (document.readyState === 'complete') startRefresh(); else window.addEventListener('load', startRefresh, { once: true });
