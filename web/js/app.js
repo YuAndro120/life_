@@ -11,6 +11,8 @@ import { calendarScreen } from './ui/calendar.js';
 import { filtersScreen } from './ui/filters.js';
 import { profileScreen } from './ui/profile.js';
 import { onboardingScreen } from './ui/onboarding.js';
+import { installScreen } from './ui/install.js';
+import { isStandalone } from './platform.js';
 
 const memoryStorage = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
 function pickStorage() {
@@ -40,6 +42,22 @@ const ctx = {
   refresh: () => refresh(true),
 };
 
+// Установка: сайт нужно поставить на экран «Домой». В браузере показываем подсказку; «продолжить» запоминается до закрытия вкладки.
+// На localhost (разработка) подсказка выключена, её можно посмотреть через ?install=1.
+let installPrompt = null;
+const installSkipped = () => { try { return sessionStorage.getItem('shtil.skipInstall') === '1'; } catch { return ctx.local.skipInstall === true; } };
+function skipInstall() { try { sessionStorage.setItem('shtil.skipInstall', '1'); } catch { ctx.local.skipInstall = true; } render(false); }
+const needsInstall = () => !isStandalone() && !installSkipped() && (!isDev || params.get('install') === '1');
+window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); installPrompt = event; if (needsInstall()) render(true); });
+window.addEventListener('appinstalled', () => { installPrompt = null; render(false); });
+async function runInstall() {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => {});
+  installPrompt = null;
+  render(true);
+}
+
 const TABS = [['/', 'Сегодня'], ['/calendar', 'Календарь'], ['/filters', 'Фильтры'], ['/profile', 'Профиль']];
 
 function currentRoute() {
@@ -67,7 +85,9 @@ function render(keepScroll = false) {
   let screen;
   let tab = null;
   try {
-    if (onboarding) {
+    if (needsInstall()) {
+      screen = installScreen(ctx, { onContinue: skipInstall, prompt: installPrompt, onInstall: runInstall });
+    } else if (onboarding) {
       if (isDev && params.get('step') && !ctx.local.onb) ctx.local.onb = { step: params.get('step'), about: params.get('about') ?? '', dismissed: new Set() };
       screen = onboardingScreen(ctx);
     } else {

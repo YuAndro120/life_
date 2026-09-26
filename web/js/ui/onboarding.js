@@ -46,7 +46,7 @@ function welcomeStep(ctx, go) {
   return h('section', { class: 'screen' },
     h('div', { class: 'row meta', style: 'padding-top:14px' }, h('span', null, 'Выпуск № 1'), h('span', null, 'Без регистрации')),
     h('h1', { class: 'title welcome-mast' }, 'Штиль', h('span', { class: 'mark' }, '.')),
-    h('h2', { class: 'title welcome-lines' }, 'Новости без шума.', h('span', { class: 'm' }, 'Законы — только твои.')),
+    h('h2', { class: 'title welcome-lines' }, 'Новости без шума.', h('span', { class: 'm' }, 'Законы тебе в помощь.')),
     h('div', { style: 'margin-top:32px' }, point('01', 'Два выпуска в день, каждый можно дочитать до конца'), point('02', 'Изменения в законах, которые касаются именно тебя'), point('03', 'Настройки живут в браузере, сервер не знает, кто ты')),
     footer(button({ title: 'Начать', onClick: () => go('about') }), h('p', { class: 'meta', style: 'text-align:center;margin-top:10px' }, '5 шагов · около минуты'),
       linkButton('У меня есть копия настроек', () => openBackupSheet(ctx, 'restore', () => ctx.nav('/')))));

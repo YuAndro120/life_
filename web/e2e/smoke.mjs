@@ -59,6 +59,14 @@ const steps = [];
 const step = async (name, fn) => { await fn(); steps.push(name); console.log('✔', name); };
 
 try {
+  await go('?install=1');
+  await step('в браузере показывается подсказка по установке, «продолжить» ведёт в приложение', async () => {
+    await waitFor(`document.body.innerText.includes('Поставь Штиль на телефон')`, 'страница установки');
+    const text = await bodyText();
+    assert.ok(text.includes('Работает без интернета') && text.includes('Настройки не пропадут'), 'преимущества');
+    await must('Пока продолжить в браузере');
+    await waitFor(`document.body.innerText.includes('Новости без шума') && document.body.innerText.includes('Законы тебе в помощь')`, 'приветствие с новой фразой');
+  });
   await go('');
   await step('приветствие и переход к рассказу о себе', async () => {
     await waitFor(`document.body.innerText.includes('Новости без шума')`, 'приветствие');
