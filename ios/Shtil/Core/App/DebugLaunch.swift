@@ -11,6 +11,7 @@ enum DebugLaunch {
     static var tab: String? { defaults.string(forKey: "shtilTab") }
     static var lawId: String? { defaults.string(forKey: "shtilLaw") }
     static var storyId: String? { defaults.string(forKey: "shtilStory") }
+    static var aboutText: String? { defaults.string(forKey: "shtilAbout") }
     static var apiOverride: String? { defaults.string(forKey: "shtilAPI") }
     static var useFixtures: Bool { defaults.string(forKey: "shtilSource") == "fixtures" }
     static var onboardingStep: Int? { defaults.string(forKey: "shtilOnbStep").flatMap { Int($0) } }
@@ -25,6 +26,7 @@ enum DebugLaunch {
     static var tab: String? { nil }
     static var lawId: String? { nil }
     static var storyId: String? { nil }
+    static var aboutText: String? { nil }
     static var apiOverride: String? { nil }
     static var useFixtures: Bool { false }
     static var onboardingStep: Int? { nil }

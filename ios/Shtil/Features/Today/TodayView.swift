@@ -62,6 +62,24 @@ struct TodayView: View {
     @ViewBuilder private func header(_ e: Edition) -> some View {
         if model.isOffline || model.isDemoData { offlineBanner }
         if theme.id == .sage { sageHeader(e) } else { paperHeader(e) }
+        personalStrip
+    }
+
+    /// «Лента для: Татарстан · ИП · Космос»: видно, чем выпуск подстроен под человека.
+    @ViewBuilder private var personalStrip: some View {
+        if let line = ProfileSummary.line(profile: model.profile.snapshot, preferences: model.settings.preferences) {
+            Button(action: openFilters) {
+                HStack(spacing: 8) {
+                    Circle().fill(theme.accent).frame(width: 6, height: 6)
+                    Text("Лента для: \(line)").font(theme.fonts.body(13, .medium)).foregroundStyle(theme.body).lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text("Изменить").font(theme.fonts.body(13)).foregroundStyle(theme.accent)
+                }
+                .padding(.horizontal, 20).frame(minHeight: 44).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Лента для: \(line). Изменить")
+        }
     }
 
     private var offlineBanner: some View {

@@ -5,13 +5,14 @@ struct OnboardingFlow: View {
     @Environment(AppModel.self) private var model
     @State private var step: Step = DebugLaunch.onboardingStep.flatMap(Step.init(rawValue:)) ?? .welcome
 
-    enum Step: Int { case welcome, profile, interests, calm, theme, building }
+    enum Step: Int { case welcome, about, profile, interests, calm, theme, building }
 
     var body: some View {
         ZStack {
             switch step {
-            case .welcome: OnbWelcome { go(.profile) }
-            case .profile: OnbProfile(back: { go(.welcome) }, next: { go(.interests) }, skip: skip)
+            case .welcome: OnbWelcome { go(.about) }
+            case .about: OnbAbout(back: { go(.welcome) }, next: { go(.profile) }, skip: skip)
+            case .profile: OnbProfile(back: { go(.about) }, next: { go(.interests) }, skip: skip)
             case .interests: OnbInterests(back: { go(.profile) }, next: { go(.calm) })
             case .calm: OnbCalm(back: { go(.interests) }, next: { go(.theme) })
             case .theme: OnbTheme(back: { go(.calm) }, next: { go(.building) })
@@ -36,7 +37,7 @@ struct OnboardingFlow: View {
 private struct OnbTop: View {
     @Environment(\.theme) private var theme
     let current: Int
-    var total = 4
+    var total = 5
     let back: () -> Void
 
     var body: some View {
@@ -110,7 +111,7 @@ private struct OnbWelcome: View {
             .padding(.top, 32)
             Spacer(minLength: 16)
             PrimaryButton(title: "Начать", trailing: "→", action: start)
-            Text("3 шага · около минуты").metaStyle().frame(maxWidth: .infinity).padding(.top, 12)
+            Text("5 шагов · около минуты").metaStyle().frame(maxWidth: .infinity).padding(.top, 12)
         }
         .padding(.horizontal, 20).padding(.bottom, 16)
     }
@@ -129,7 +130,129 @@ private struct OnbWelcome: View {
     }
 }
 
-// MARK: - 1. профиль
+// MARK: - 1. о себе
+
+private struct OnbAbout: View {
+    @Environment(\.theme) private var theme
+    @Environment(AppModel.self) private var model
+    let back: () -> Void
+    let next: () -> Void
+    let skip: () -> Void
+    @State private var text = DebugLaunch.aboutText ?? ""
+    @State private var dismissed: Set<String> = []
+    @State private var showRegions = false
+    @FocusState private var focused: Bool
+
+    private static let examples = [
+        "Живу в Казани, ИП на патенте, езжу на машине, люблю космос",
+        "Студентка из Новосибирска, снимаю квартиру, интересуют наука и кино",
+        "Работаю по найму, ипотека, не люблю футбол и сплетни",
+    ]
+
+    private var parsed: AboutParse { AboutParser.parse(text).without(dismissed) }
+
+    var body: some View {
+        OnbScaffold(current: 1, back: back) {
+            ScreenTitle(title: "Расскажи о себе", size: 40, mark: "?").padding(.top, 22)
+            Text("Пара слов: где живёшь, чем занимаешься, что любишь и что надоело. Лента подстроится сразу.")
+                .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted).padding(.top, 12)
+
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $text)
+                    .focused($focused)
+                    .font(theme.fonts.body(17)).foregroundStyle(theme.ink)
+                    .scrollContentBackground(.hidden)
+                    .padding(.horizontal, 10).padding(.vertical, 8)
+                    .frame(minHeight: 132)
+                if text.isEmpty {
+                    Text("Например: живу в Казани, ИП на патенте, езжу на машине, люблю космос, не люблю футбол")
+                        .font(theme.fonts.body(17)).foregroundStyle(theme.muted.opacity(0.7)).lineSpacing(3)
+                        .padding(.horizontal, 15).padding(.vertical, 16).allowsHitTesting(false)
+                }
+            }
+            .background(RoundedRectangle(cornerRadius: theme.cardRadius, style: .continuous).fill(theme.card))
+            .overlay(RoundedRectangle(cornerRadius: theme.cardRadius, style: .continuous).strokeBorder(theme.line, lineWidth: 1))
+            .padding(.top, 24)
+
+            if text.isEmpty {
+                Text("Или начни с примера").metaStyle().padding(.top, 20)
+                ForEach(Self.examples, id: \.self) { example in
+                    Button { text = example; dismissed = [] } label: {
+                        Text(example).font(theme.fonts.body(14)).foregroundStyle(theme.body).multilineTextAlignment(.leading)
+                            .padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Rule()
+                }
+            } else {
+                understood
+            }
+
+            HStack(alignment: .top, spacing: 10) {
+                Circle().fill(theme.accent).frame(width: 7, height: 7).padding(.top, 6)
+                Text("Текст разбирается на этом телефоне и никуда не отправляется. Его даже не сохраняем: остаются только плашки.")
+                    .font(theme.fonts.body(13)).lineSpacing(3).foregroundStyle(theme.muted)
+            }
+            .padding(.top, 24)
+        } footer: {
+            PrimaryButton(title: parsed.isEmpty ? "Дальше" : "Дальше, всё верно", trailing: "→") {
+                var profile = model.profile.snapshot
+                var prefs = model.settings.preferences
+                parsed.apply(to: &profile, preferences: &prefs)
+                model.profile.snapshot = profile
+                model.settings.preferences = prefs
+                model.save()
+                next()
+            }
+            Button(action: skip) {
+                Text("Пропустить").font(theme.fonts.body(15, .medium)).foregroundStyle(theme.muted).frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showRegions) { RegionPickerSheet().environment(\.theme, theme).environment(model) }
+    }
+
+    @ViewBuilder private var understood: some View {
+        let chips = parsed.chips
+        Text(chips.isEmpty ? "Пока ничего не поняли" : "Мы поняли так").metaStyle().padding(.top, 20)
+        if chips.isEmpty {
+            Text("Напиши, например, город, работу или что тебе интересно. Или выбери регион вручную.")
+                .font(theme.fonts.body(14)).foregroundStyle(theme.muted).padding(.top, 8)
+        } else {
+            FlowLayout(spacing: 8) {
+                ForEach(chips) { chip in
+                    Button { dismissed.insert(chip.id) } label: {
+                        HStack(spacing: 8) {
+                            Text(chip.title)
+                            Text("×").foregroundStyle(theme.muted)
+                        }
+                        .font(theme.fonts.body(15, .medium)).foregroundStyle(theme.ink)
+                        .padding(.leading, 14).padding(.trailing, 12).frame(minHeight: 40)
+                        .background(Capsule().fill(chip.kind == .region ? theme.accent.opacity(0.14) : theme.chipBg))
+                        .overlay(Capsule().strokeBorder(theme.chipBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(chip.title), убрать")
+                }
+            }
+            .padding(.top, 10)
+        }
+        if parsed.regionCode == nil {
+            Button { showRegions = true } label: {
+                HStack {
+                    Text("Регион не нашли").font(theme.fonts.body(15)).foregroundStyle(theme.ink)
+                    Spacer()
+                    Text("Выбрать →").metaStyle(color: theme.accent)
+                }
+                .frame(minHeight: 44).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 6)
+        }
+    }
+}
+
+// MARK: - 2. профиль
 
 private struct OnbProfile: View {
     @Environment(\.theme) private var theme
@@ -138,7 +261,7 @@ private struct OnbProfile: View {
     let skip: () -> Void
 
     var body: some View {
-        OnbScaffold(current: 1, back: back) {
+        OnbScaffold(current: 2, back: back) {
             ScreenTitle(title: "Что про тебя важно знать", size: 40, mark: "?").padding(.top, 22)
             Text("Покажем только те законы и изменения, которые касаются тебя.")
                 .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted).padding(.top, 12)
@@ -168,7 +291,7 @@ private struct OnbInterests: View {
     let next: () -> Void
 
     var body: some View {
-        OnbScaffold(current: 2, back: back) {
+        OnbScaffold(current: 3, back: back) {
             ScreenTitle(title: "Что тебе интересно", size: 40, mark: "?").padding(.top, 22)
             Text("Сюжеты по выбранным темам пойдут первыми. Всё можно поменять в фильтрах.")
                 .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted).padding(.top, 12)
@@ -220,7 +343,7 @@ private struct OnbCalm: View {
     private static let hideable: [Topic] = [.politics, .crime, .incidents, .disasters, .showbiz, .sport, .crypto]
 
     var body: some View {
-        OnbScaffold(current: 3, back: back) {
+        OnbScaffold(current: 4, back: back) {
             ScreenTitle(title: "Что тебе не показывать", size: 40, mark: "?").padding(.top, 22)
             Text("Всё это можно поменять потом в фильтрах.")
                 .font(theme.fonts.body(16)).foregroundStyle(theme.muted).padding(.top, 12)
@@ -302,7 +425,7 @@ private struct OnbTheme: View {
     let next: () -> Void
 
     var body: some View {
-        OnbScaffold(current: 4, back: back) {
+        OnbScaffold(current: 5, back: back) {
             ScreenTitle(title: "Как будет выглядеть выпуск", size: 40, mark: "?").padding(.top, 22)
             Text("Выбери тему, экран сразу покажет её. Сменить можно в любой момент.")
                 .font(theme.fonts.body(16)).lineSpacing(3).foregroundStyle(theme.muted).padding(.top, 12)

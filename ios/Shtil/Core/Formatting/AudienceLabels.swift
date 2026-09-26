@@ -42,32 +42,6 @@ extension UserProfile.Housing {
     }
 }
 
-enum Region {
-    struct Item: Hashable, Identifiable, Sendable {
-        let code: String
-        let title: String
-        var id: String { code }
-    }
-
-    /// Стартовый список для MVP; полный список и региональные источники — открытый вопрос плана.
-    static let all: [Item] = [
-        .init(code: "77", title: "Москва"),
-        .init(code: "78", title: "Санкт-Петербург"),
-        .init(code: "50", title: "Московская область"),
-        .init(code: "47", title: "Ленинградская область"),
-        .init(code: "23", title: "Краснодарский край"),
-        .init(code: "16", title: "Татарстан"),
-        .init(code: "66", title: "Свердловская область"),
-        .init(code: "54", title: "Новосибирская область"),
-        .init(code: "52", title: "Нижегородская область"),
-        .init(code: "63", title: "Самарская область"),
-    ]
-
-    static func title(for code: String?) -> String? {
-        code.flatMap { c in all.first { $0.code == c }?.title }
-    }
-}
-
 /// Подписи аудитории закона для карточек, календаря и блока «Тебе».
 enum AudienceLabels {
     static func label(forTag tag: String) -> String {

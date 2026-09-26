@@ -51,7 +51,7 @@ struct ProfileForm: View {
                 .buttonStyle(.plain)
             }
         }
-        .sheet(isPresented: $showRegions) { RegionSheet().environment(\.theme, theme).environment(model) }
+        .sheet(isPresented: $showRegions) { RegionPickerSheet().environment(\.theme, theme).environment(model) }
     }
 
     private var profile: UserProfile { model.profile.snapshot }
@@ -81,50 +81,5 @@ struct ProfileForm: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
-    }
-}
-
-private struct RegionSheet: View {
-    @Environment(\.theme) private var theme
-    @Environment(\.dismiss) private var dismiss
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Регион").font(theme.fonts.heading(22, .semibold)).foregroundStyle(theme.ink)
-                Spacer()
-                Button("Готово") { dismiss() }.font(theme.fonts.body(16, .medium)).foregroundStyle(theme.accent).frame(minHeight: 44)
-            }
-            .padding(.top, 20)
-            ScrollView {
-                VStack(spacing: 0) {
-                    row(title: "Не указывать", code: nil)
-                    ForEach(Region.all) { r in row(title: r.title, code: r.code) }
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-        .background(theme.bg.ignoresSafeArea())
-    }
-
-    private func row(title: String, code: String?) -> some View {
-        VStack(spacing: 0) {
-            Button {
-                var p = model.profile.snapshot
-                p.regionCode = code
-                model.profile.snapshot = p
-                model.save()
-            } label: {
-                HStack {
-                    Text(title).font(theme.fonts.body(17)).foregroundStyle(theme.ink)
-                    Spacer()
-                    if model.profile.regionCode == code { Image(systemName: "checkmark").foregroundStyle(theme.accent) }
-                }
-                .frame(minHeight: 48).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Rule()
-        }
     }
 }
