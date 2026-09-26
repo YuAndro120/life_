@@ -67,18 +67,27 @@ func charsetReader(label string, input io.Reader) (io.Reader, error) {
 
 type rssDoc struct {
 	Items []struct {
-		Title       string `xml:"title"`
-		Link        string `xml:"link"`
-		GUID        string `xml:"guid"`
-		Description string `xml:"description"`
-		PubDate     string `xml:"pubDate"`
+		Title string `xml:"title"`
+		// Ссылок может быть несколько (`<link>` и пустой `<atom:link>`): берём первую непустую.
+		Links       []string `xml:"link"`
+		GUID        string   `xml:"guid"`
+		Description string   `xml:"description"`
+		// Полный текст в Яндекс-формате: используется, если описание пустое.
+		FullText string `xml:"full-text"`
+		PubDate  string `xml:"pubDate"`
 	} `xml:"channel>item"`
 }
 
 func (d rssDoc) posts(now time.Time) []RawPost {
 	out := make([]RawPost, 0, len(d.Items))
 	for _, it := range d.Items {
-		link := strings.TrimSpace(it.Link)
+		link := ""
+		for _, l := range it.Links {
+			if l = strings.TrimSpace(l); l != "" {
+				link = l
+				break
+			}
+		}
 		id := strings.TrimSpace(it.GUID)
 		if id == "" {
 			id = link
@@ -90,7 +99,7 @@ func (d rssDoc) posts(now time.Time) []RawPost {
 			ExternalID:  id,
 			URL:         link,
 			PublishedAt: parseTime(it.PubDate, now),
-			Text:        joinText(it.Title, it.Description),
+			Text:        joinText(it.Title, firstNonEmpty(it.Description, it.FullText)),
 		})
 	}
 	return out
@@ -182,4 +191,11 @@ func parseTime(s string, fallback time.Time) time.Time {
 		}
 	}
 	return fallback
+}
+
+func firstNonEmpty(a, b string) string {
+	if strings.TrimSpace(a) != "" {
+		return a
+	}
+	return b
 }
