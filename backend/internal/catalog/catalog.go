@@ -22,6 +22,8 @@ type Entry struct {
 	TopicHint string `yaml:"topic_hint"`
 	// Country — страна издания (RU, US, GB, EU): по ней пользователь выбирает, откуда читать новости.
 	Country string `yaml:"country"`
+	// Region — код субъекта РФ для региональных источников (двузначный номер); пусто у федеральных.
+	Region string `yaml:"region"`
 	// Lang — язык постов (ru по умолчанию). Пересказ всегда по-русски.
 	Lang string `yaml:"lang"`
 	// Active — желание владельца включить источник. Фактически он включится только при legal_checked.
@@ -39,6 +41,7 @@ var (
 	kinds     = map[string]bool{"rss": true, "tg": true, "gov": true, "site": true}
 	handleRe  = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 	countryRe = regexp.MustCompile(`^[A-Z]{2}$`)
+	regionRe  = regexp.MustCompile(`^[0-9]{2}$`)
 	langRe    = regexp.MustCompile(`^[a-z]{2}$`)
 	topics    = map[string]bool{
 		"economy": true, "finance": true, "law": true, "tech_ai": true, "city": true, "health": true,
@@ -107,6 +110,9 @@ func (e Entry) Validate() error {
 	}
 	if e.Country != "" && !countryRe.MatchString(e.Country) {
 		return fmt.Errorf("country %q: ожидается двухбуквенный код страны", e.Country)
+	}
+	if e.Region != "" && !regionRe.MatchString(e.Region) {
+		return fmt.Errorf("region %q: ожидается двузначный код региона", e.Region)
 	}
 	if !langRe.MatchString(e.Lang) {
 		return fmt.Errorf("lang %q: ожидается двухбуквенный код языка", e.Lang)

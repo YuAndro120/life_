@@ -42,7 +42,7 @@ SELECT
     s.meaning,
     s.post_count,
     s.source_count,
-    s.region_code,
+    COALESCE(s.source_region, s.region_code) AS region_code,
     s.country,
     s.lang,
     s.updated_at,

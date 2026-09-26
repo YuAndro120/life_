@@ -39,6 +39,11 @@ struct FiltersView: View {
                         }
                     }
                     .padding(.vertical, 12)
+                    SwitchRow(
+                        title: "Только мой регион и федеральные",
+                        hint: model.profile.regionCode == nil ? "Регион не выбран: региональные новости скрыты" : "Новости других регионов скрыты",
+                        isOn: $settings.hideOtherRegions
+                    )
                 }
 
                 section("03", "Мои интересы") {

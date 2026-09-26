@@ -15,9 +15,9 @@ SELECT EXISTS (SELECT 1 FROM law_changes WHERE eo_number = $1);
 -- name: InsertLawDraft :one
 INSERT INTO law_changes (
     eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
-    passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes
+    passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes, kind
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
 )
 ON CONFLICT (eo_number) DO NOTHING
 RETURNING id;
@@ -29,10 +29,10 @@ VALUES ($1, $2, '', '', 'signed', $3, $4, true, $5)
 ON CONFLICT (eo_number) DO NOTHING;
 
 -- name: ListLawDrafts :many
-SELECT id, eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
+SELECT kind, id, eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
        passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes
 FROM law_changes
-WHERE NOT verified AND NOT rejected
+WHERE NOT verified AND NOT rejected AND kind = 'federal'
 ORDER BY effective_at NULLS LAST, id;
 
 -- name: UpdateLawDraft :exec
@@ -47,9 +47,18 @@ UPDATE law_changes SET verified = true, verified_at = now() WHERE id = $1 AND NO
 -- name: RejectLaw :exec
 UPDATE law_changes SET rejected = true, reject_reason = $2 WHERE id = $1 AND NOT verified;
 
+-- name: CountRegionalDrafts :one
+SELECT count(*)::int FROM law_changes WHERE kind = 'regional_title' AND NOT verified AND NOT rejected;
+
 -- name: CountLaws :one
 SELECT
     count(*) FILTER (WHERE verified)                       AS verified,
     count(*) FILTER (WHERE NOT verified AND NOT rejected)  AS drafts,
     count(*) FILTER (WHERE rejected)                       AS rejected
 FROM law_changes;
+
+-- name: ApproveRegionalTitles :many
+-- Массовое подтверждение региональных законов, у которых нет текста модели: только официальное название, дата и ссылка.
+UPDATE law_changes SET verified = true, verified_at = now()
+WHERE kind = 'regional_title' AND NOT verified AND NOT rejected
+RETURNING region_code;

@@ -113,6 +113,7 @@ func syncCatalog(ctx context.Context, pool *pgxpool.Pool, path string) error {
 			Kind: e.Kind, Handle: e.Handle, Url: e.URL, Title: e.Title,
 			TopicHint:      pgtype.Text{String: e.TopicHint, Valid: e.TopicHint != ""},
 			Country:        pgtype.Text{String: e.Country, Valid: e.Country != ""},
+			RegionCode:     pgtype.Text{String: e.Region, Valid: e.Region != ""},
 			Lang:           e.Lang,
 			LegalStatus:    "ok",
 			LegalCheckedAt: checked,

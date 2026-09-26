@@ -32,6 +32,7 @@ type LawChange struct {
 	Quotes       []byte
 	Rejected     bool
 	RejectReason pgtype.Text
+	Kind         string
 }
 
 type LlmUsage struct {
@@ -72,6 +73,7 @@ type Source struct {
 	ConsecutiveFailures int32
 	Country             pgtype.Text
 	Lang                string
+	RegionCode          pgtype.Text
 }
 
 type Story struct {
@@ -97,6 +99,7 @@ type Story struct {
 	HasOfficialSource bool
 	Country           pgtype.Text
 	Lang              string
+	SourceRegion      pgtype.Text
 }
 
 type StoryPost struct {

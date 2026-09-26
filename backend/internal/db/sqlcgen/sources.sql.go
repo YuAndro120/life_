@@ -131,13 +131,14 @@ func (q *Queries) RecordFetchSuccess(ctx context.Context, arg RecordFetchSuccess
 }
 
 const upsertSource = `-- name: UpsertSource :exec
-INSERT INTO sources (kind, handle, url, title, topic_hint, country, lang, legal_status, legal_checked_at, active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::date, $10)
+INSERT INTO sources (kind, handle, url, title, topic_hint, country, region_code, lang, legal_status, legal_checked_at, active)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11)
 ON CONFLICT (kind, handle) DO UPDATE SET
     url = EXCLUDED.url,
     title = EXCLUDED.title,
     topic_hint = EXCLUDED.topic_hint,
     country = EXCLUDED.country,
+    region_code = EXCLUDED.region_code,
     lang = EXCLUDED.lang,
     legal_status = EXCLUDED.legal_status,
     legal_checked_at = EXCLUDED.legal_checked_at,
@@ -151,6 +152,7 @@ type UpsertSourceParams struct {
 	Title          string
 	TopicHint      pgtype.Text
 	Country        pgtype.Text
+	RegionCode     pgtype.Text
 	Lang           string
 	LegalStatus    string
 	LegalCheckedAt pgtype.Date
@@ -166,6 +168,7 @@ func (q *Queries) UpsertSource(ctx context.Context, arg UpsertSourceParams) erro
 		arg.Title,
 		arg.TopicHint,
 		arg.Country,
+		arg.RegionCode,
 		arg.Lang,
 		arg.LegalStatus,
 		arg.LegalCheckedAt,

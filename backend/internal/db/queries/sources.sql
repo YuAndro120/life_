@@ -6,13 +6,14 @@ ORDER BY id;
 
 -- name: UpsertSource :exec
 -- Каталог из seeds/sources.yaml. Активность ограничена CHECK-ограничением (нужна дата проверки по реестрам).
-INSERT INTO sources (kind, handle, url, title, topic_hint, country, lang, legal_status, legal_checked_at, active)
-VALUES (@kind, @handle, @url, @title, sqlc.narg('topic_hint'), sqlc.narg('country'), @lang, @legal_status, sqlc.narg('legal_checked_at')::date, @active)
+INSERT INTO sources (kind, handle, url, title, topic_hint, country, region_code, lang, legal_status, legal_checked_at, active)
+VALUES (@kind, @handle, @url, @title, sqlc.narg('topic_hint'), sqlc.narg('country'), sqlc.narg('region_code'), @lang, @legal_status, sqlc.narg('legal_checked_at')::date, @active)
 ON CONFLICT (kind, handle) DO UPDATE SET
     url = EXCLUDED.url,
     title = EXCLUDED.title,
     topic_hint = EXCLUDED.topic_hint,
     country = EXCLUDED.country,
+    region_code = EXCLUDED.region_code,
     lang = EXCLUDED.lang,
     legal_status = EXCLUDED.legal_status,
     legal_checked_at = EXCLUDED.legal_checked_at,

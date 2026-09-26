@@ -2,7 +2,7 @@ import Testing
 @testable import Shtil
 
 @Suite struct BuildingPlanTests {
-    private func plan(prefs: FilterPreferences = .default, profile: UserProfile = UserProfile(work: [.ip])) throws -> BuildingPlan {
+    private func plan(prefs: FilterPreferences = { var p = FilterPreferences.default; p.homeRegion = "77"; return p }(), profile: UserProfile = UserProfile(work: [.ip])) throws -> BuildingPlan {
         let feed = try Fixtures.feed()
         let e = FilterEngine.edition(
             number: 1, feed: feed, laws: try Fixtures.laws(), profile: profile, preferences: prefs,

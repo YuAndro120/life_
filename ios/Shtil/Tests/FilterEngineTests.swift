@@ -168,10 +168,11 @@ import Testing
         let e = FilterEngine.edition(
             number: 1, feed: feed, laws: try Fixtures.laws(),
             profile: UserProfile(gender: .male, age: .a20to25, work: [.ip], housing: [.renter], drives: true),
-            preferences: .default, window: EditionWindow(start: nil, end: TestData.date("2026-09-25T05:00:00Z")),
+            preferences: { var p = FilterPreferences.default; p.homeRegion = "77"; return p }(),
+            window: EditionWindow(start: nil, end: TestData.date("2026-09-25T05:00:00Z")),
             today: TestData.today
         )
-        // По умолчанию: факты и решения, политика и криминал скрыты, тяжёлые свёрнуты.
+        // По умолчанию (пользователь из Москвы): факты и решения, политика и криминал скрыты, тяжёлые свёрнуты.
         #expect(Set(e.stories.map(\.id)) == ["st_01", "st_02", "st_03", "st_09"])
         #expect(Set(e.foldedHeavy.map(\.id)) == ["st_06", "st_07"])
         #expect(e.stories.first?.id == "st_01")

@@ -65,6 +65,7 @@ enum FilterEngine {
         // Единственное исключение из «всё про СВО скрыто»: официальное заявление об окончании СВО показываем всегда.
         if p.hideWar, WarMarkers.isEndAnnouncement(story) { return true }
         if p.hideWar, WarMarkers.matches(story) { return false }
+        if p.hideOtherRegions, let region = story.regionCode, region != p.homeRegion { return false }
         guard !p.stopTopics.contains(story.topic), p.infoTypes.contains(story.infoType) else { return false }
         guard p.countries.contains(story.countryCode) else { return false }
         if p.stopTopics.contains(.politics), !p.interests.contains(story.topic), PoliticalMarkers.matches(story) { return false }

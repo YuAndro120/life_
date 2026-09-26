@@ -27,6 +27,7 @@ final class FilterSettings {
     var hiddenStories: [String] = []
     var storyLimit: Int = 15
     var hideWar: Bool = true
+    var hideOtherRegions: Bool = true
     /// Хранить копию профиля в связке ключей (для восстановления после переустановки).
     var backupEnabled: Bool = true
     var blockedWords: [String] = []
@@ -49,6 +50,7 @@ final class FilterSettings {
                 onlyInterests: onlyInterests,
                 mutedSources: Set(mutedSources),
                 hiddenStories: Set(hiddenStories),
+                hideOtherRegions: hideOtherRegions,
                 hideWar: hideWar,
                 blockedWords: blockedWords,
                 storyLimit: storyLimit
@@ -71,6 +73,7 @@ final class FilterSettings {
             hiddenStories = Array((kept + added).suffix(Self.hiddenLimit))
             storyLimit = newValue.storyLimit
             hideWar = newValue.hideWar
+            hideOtherRegions = newValue.hideOtherRegions
             blockedWords = newValue.blockedWords
         }
     }

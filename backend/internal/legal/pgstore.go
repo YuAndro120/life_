@@ -58,6 +58,7 @@ func (s *PGStore) SaveDraft(ctx context.Context, d Draft) error {
 		SourceUrl:    text(d.SourceURL),
 		ActNumber:    text("№ " + d.Doc.Number),
 		Quotes:       quotes,
+		Kind:         "federal",
 	})
 	return err
 }
@@ -78,4 +79,26 @@ func nonNil(s []string) []string {
 		return []string{}
 	}
 	return s
+}
+
+// SaveRegional записывает региональный закон как черновик: название и данные портала, без текста модели.
+func (s *PGStore) SaveRegional(ctx context.Context, d RegionalDoc) error {
+	signed := d.Doc.Signed
+	_, err := s.q.InsertLawDraft(ctx, sqlcgen.InsertLawDraftParams{
+		EoNumber:     text(d.EONumber),
+		Title:        d.Title,
+		WhatChanged:  "Принят закон региона: " + d.Title,
+		WhoAffected:  d.Who,
+		Actions:      []byte("[]"),
+		AudienceTags: d.Tags,
+		RegionCode:   text(d.Region),
+		Status:       "signed",
+		SignedAt:     date(&signed),
+		OfficialUrl:  text(d.OfficialURL()),
+		SourceUrl:    text(d.OfficialURL()),
+		ActNumber:    text("№ " + d.Number),
+		Quotes:       []byte("{}"),
+		Kind:         "regional_title",
+	})
+	return err
 }

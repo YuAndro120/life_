@@ -57,3 +57,19 @@ sources:
   #   организаций не значится (были лишь предложения депутатов), но без доступа с сервера смысла подключать нет.
   # Space.com, SpaceNews: сайты не отдают ленты автоматическим клиентам (пустая страница / HTTP 429).
   # Deutsche Welle, Радио Свобода, Медуза, The Insider и другие из реестров — не добавляются.
+
+  # --- Региональные источники. region — код субъекта РФ; их сюжеты видят жители этого региона (настраивается в «Фильтрах»). ---
+  # Государственные органы и государственные СМИ: реестры иноагентов и нежелательных организаций к ним не применимы (проверка 2026-09-26).
+  - {kind: gov, handle: spb_press, url: "https://www.gov.spb.ru/press/rss/", title: Правительство Санкт-Петербурга, country: RU, region: "78", active: true, legal_checked: 2026-09-26, note: "Официальный портал власти региона."}
+  - {kind: gov, handle: lenobl, url: "https://lenobl.ru/rss/", title: Правительство Ленинградской области, country: RU, region: "47", active: true, legal_checked: 2026-09-26, note: "Официальный портал власти региона."}
+  - {kind: gov, handle: samregion, url: "https://samregion.ru/rss/", title: Правительство Самарской области, country: RU, region: "63", active: true, legal_checked: 2026-09-26, note: "Официальный портал власти региона."}
+  - {kind: rss, handle: m24, url: "https://www.m24.ru/rss.xml", title: Москва 24, country: RU, region: "77", active: true, legal_checked: 2026-09-26, note: "Городской телеканал правительства Москвы."}
+  - {kind: rss, handle: tatar_inform, url: "https://www.tatar-inform.ru/rss", title: Татар-информ, country: RU, region: "16", active: true, legal_checked: 2026-09-26, note: "Государственное информационное агентство Республики Татарстан."}
+  # Коммерческие городские издания: ленты работают, но проверка по реестрам вручную не выполнена, поэтому выключены.
+  # Чтобы включить: проверьте название на minjust.gov.ru (иноагенты) и в реестре нежелательных организаций, затем поставьте active: true и legal_checked.
+  - {kind: rss, handle: ura_news, url: "https://ura.news/rss", title: URA.RU, country: RU, region: "66", active: false, note: "Свердловская область и Урал. Ждёт ручной проверки по реестрам."}
+  - {kind: rss, handle: r63, url: "https://63.ru/rss/", title: 63.ру, country: RU, region: "63", active: false, note: "Самара. Ждёт ручной проверки по реестрам."}
+  - {kind: rss, handle: r74, url: "https://74.ru/rss/", title: 74.ру, country: RU, region: "74", active: false, note: "Челябинск. Ждёт ручной проверки по реестрам."}
+  - {kind: rss, handle: kubantoday, url: "https://kubantoday.ru/rss/", title: Кубань Сегодня, country: RU, region: "23", active: false, note: "Краснодарский край. Ждёт ручной проверки по реестрам."}
+  - {kind: rss, handle: kubnews, url: "https://kubnews.ru/rss/", title: Кубанские новости, country: RU, region: "23", active: false, note: "Краснодарский край. Ждёт ручной проверки по реестрам."}
+  - {kind: rss, handle: todaykhv, url: "https://todaykhv.ru/rss/", title: Хабаровск сегодня, country: RU, region: "27", active: false, note: "Хабаровский край. Ждёт ручной проверки по реестрам."}

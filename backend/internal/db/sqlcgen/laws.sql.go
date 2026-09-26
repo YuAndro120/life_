@@ -11,6 +11,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const approveRegionalTitles = `-- name: ApproveRegionalTitles :many
+UPDATE law_changes SET verified = true, verified_at = now()
+WHERE kind = 'regional_title' AND NOT verified AND NOT rejected
+RETURNING region_code
+`
+
+// Массовое подтверждение региональных законов, у которых нет текста модели: только официальное название, дата и ссылка.
+func (q *Queries) ApproveRegionalTitles(ctx context.Context) ([]pgtype.Text, error) {
+	rows, err := q.db.Query(ctx, approveRegionalTitles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.Text
+	for rows.Next() {
+		var region_code pgtype.Text
+		if err := rows.Scan(&region_code); err != nil {
+			return nil, err
+		}
+		items = append(items, region_code)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countLaws = `-- name: CountLaws :one
 SELECT
     count(*) FILTER (WHERE verified)                       AS verified,
@@ -32,12 +59,23 @@ func (q *Queries) CountLaws(ctx context.Context) (CountLawsRow, error) {
 	return i, err
 }
 
+const countRegionalDrafts = `-- name: CountRegionalDrafts :one
+SELECT count(*)::int FROM law_changes WHERE kind = 'regional_title' AND NOT verified AND NOT rejected
+`
+
+func (q *Queries) CountRegionalDrafts(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, countRegionalDrafts)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const insertLawDraft = `-- name: InsertLawDraft :one
 INSERT INTO law_changes (
     eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
-    passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes
+    passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes, kind
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
 )
 ON CONFLICT (eo_number) DO NOTHING
 RETURNING id
@@ -59,6 +97,7 @@ type InsertLawDraftParams struct {
 	SourceUrl    pgtype.Text
 	ActNumber    pgtype.Text
 	Quotes       []byte
+	Kind         string
 }
 
 func (q *Queries) InsertLawDraft(ctx context.Context, arg InsertLawDraftParams) (int64, error) {
@@ -78,6 +117,7 @@ func (q *Queries) InsertLawDraft(ctx context.Context, arg InsertLawDraftParams) 
 		arg.SourceUrl,
 		arg.ActNumber,
 		arg.Quotes,
+		arg.Kind,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -122,14 +162,15 @@ func (q *Queries) LawSeen(ctx context.Context, eoNumber pgtype.Text) (bool, erro
 }
 
 const listLawDrafts = `-- name: ListLawDrafts :many
-SELECT id, eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
+SELECT kind, id, eo_number, title, what_changed, who_affected, actions, audience_tags, region_code, status,
        passed_at, signed_at, effective_at, official_url, source_url, act_number, quotes
 FROM law_changes
-WHERE NOT verified AND NOT rejected
+WHERE NOT verified AND NOT rejected AND kind = 'federal'
 ORDER BY effective_at NULLS LAST, id
 `
 
 type ListLawDraftsRow struct {
+	Kind         string
 	ID           int64
 	EoNumber     pgtype.Text
 	Title        string
@@ -158,6 +199,7 @@ func (q *Queries) ListLawDrafts(ctx context.Context) ([]ListLawDraftsRow, error)
 	for rows.Next() {
 		var i ListLawDraftsRow
 		if err := rows.Scan(
+			&i.Kind,
 			&i.ID,
 			&i.EoNumber,
 			&i.Title,

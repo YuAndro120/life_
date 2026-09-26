@@ -73,4 +73,26 @@ import Testing
         #expect(s.preferences.hideWar == false)
         #expect(s.preferences.blockedWords == ["футбол", "погода"])
     }
+
+    @Test func otherRegionsAreHiddenByDefault() {
+        func regional(_ code: String?) -> Story {
+            let base = TestData.story("r", topic: .city, title: "Новость города", summary: "Что-то произошло")
+            return Story(
+                id: base.id, topic: base.topic, infoType: base.infoType, heaviness: base.heaviness, title: base.title, meaning: nil,
+                summary: base.summary, postCount: base.postCount, sourceCount: base.sourceCount, sources: [],
+                regionCode: code, country: nil, lang: "ru", updatedAt: base.updatedAt
+            )
+        }
+        var p = prefs
+        p.hideWar = false
+        #expect(FilterPreferences.default.hideOtherRegions)
+        p.homeRegion = "16"
+        #expect(FilterEngine.isAllowed(regional(nil), p))
+        #expect(FilterEngine.isAllowed(regional("16"), p))
+        #expect(!FilterEngine.isAllowed(regional("78"), p))
+        p.homeRegion = nil
+        #expect(!FilterEngine.isAllowed(regional("16"), p))
+        p.hideOtherRegions = false
+        #expect(FilterEngine.isAllowed(regional("78"), p))
+    }
 }

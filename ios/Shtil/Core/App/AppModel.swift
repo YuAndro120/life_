@@ -91,6 +91,13 @@ final class AppModel {
 
     var onboardingCompleted: Bool { profile.onboardingCompleted }
 
+    /// Настройки с регионом из профиля: по нему отбираются региональные сюжеты.
+    private var effectivePreferences: FilterPreferences {
+        var p = settings.preferences
+        p.homeRegion = profile.regionCode
+        return p
+    }
+
     var edition: Edition? {
         guard let feed else { return nil }
         return FilterEngine.edition(
@@ -98,7 +105,7 @@ final class AppModel {
             feed: feed,
             laws: laws,
             profile: profile.snapshot,
-            preferences: settings.preferences,
+            preferences: effectivePreferences,
             window: EditionWindow(start: nil, end: max(feed.generatedAt, now)),
             today: today
         )

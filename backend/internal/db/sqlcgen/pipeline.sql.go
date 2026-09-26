@@ -426,12 +426,14 @@ UPDATE stories s SET
     has_official_source = c.official,
     last_post_at = c.last_at,
     country = c.country,
+    source_region = c.region,
     lang = COALESCE(c.lang, s.lang),
     updated_at = GREATEST(s.updated_at, c.last_at)
 FROM (
     SELECT count(*)::int AS n, (count(DISTINCT p.source_id) FILTER (WHERE p.derived_from IS NULL))::int AS sources,
            bool_or(src.kind = 'gov') AS official, max(p.published_at) AS last_at,
            mode() WITHIN GROUP (ORDER BY src.country) AS country,
+           mode() WITHIN GROUP (ORDER BY src.region_code) AS region,
            mode() WITHIN GROUP (ORDER BY p.lang) AS lang
     FROM posts p JOIN sources src ON src.id = p.source_id
     WHERE p.story_id = $1

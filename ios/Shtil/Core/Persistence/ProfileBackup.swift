@@ -124,7 +124,7 @@ extension UserProfile {
 extension FilterPreferences {
     enum CodingKeys: String, CodingKey {
         case calmMode, infoTypes, heavyMode, maxHeavy, stopTopics, hideAds, countries, interests, onlyInterests
-        case mutedSources, hiddenStories, hideWar, blockedWords, storyLimit
+        case mutedSources, hiddenStories, hideWar, hideOtherRegions, blockedWords, storyLimit
     }
 
     init(from decoder: Decoder) throws {
@@ -142,6 +142,7 @@ extension FilterPreferences {
         p.mutedSources = try c.decodeIfPresent(Set<String>.self, forKey: .mutedSources) ?? p.mutedSources
         p.hiddenStories = try c.decodeIfPresent(Set<String>.self, forKey: .hiddenStories) ?? p.hiddenStories
         p.hideWar = try c.decodeIfPresent(Bool.self, forKey: .hideWar) ?? p.hideWar
+        p.hideOtherRegions = try c.decodeIfPresent(Bool.self, forKey: .hideOtherRegions) ?? p.hideOtherRegions
         p.blockedWords = try c.decodeIfPresent([String].self, forKey: .blockedWords) ?? p.blockedWords
         p.storyLimit = try c.decodeIfPresent(Int.self, forKey: .storyLimit) ?? p.storyLimit
         self = p

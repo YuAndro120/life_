@@ -1,6 +1,8 @@
 // Команда lawtool — юридический конвейер.
 //
 //	lawtool fetch [-since 2026-07-01] [-limit 30]  — собрать новые законы, извлечь структуру моделью, сохранить черновики
+//	lawtool fetch-regional [-since ...] [-limit 200] — региональные законы: название и ссылка с официального портала, без модели
+//	lawtool approve-regional [-yes]                 — подтвердить региональные черновики (только названия и ссылки)
 //	lawtool review                                 — проверить черновики вручную; в API попадают только подтверждённые
 //	lawtool stats                                  — сколько подтверждённых, черновиков и отклонённых
 //
@@ -45,6 +47,7 @@ func main() {
 func run(cmd string, args []string) error {
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	since := fs.String("since", time.Now().AddDate(0, -3, 0).Format("2006-01-02"), "подписаны не раньше этой даты (fetch)")
+	yes := fs.Bool("yes", false, "подтвердить без вопросов (approve-regional)")
 	limit := fs.Int("limit", 30, "сколько новых законов обработать за запуск (fetch)")
 	model := fs.String("model", "", "модель для разбора законов (по умолчанию из окружения провайдера)")
 	_ = fs.Parse(args)
@@ -65,6 +68,26 @@ func run(cmd string, args []string) error {
 	switch cmd {
 	case "fetch":
 		return fetch(ctx, store, *since, *limit, *model)
+	case "fetch-regional":
+		from, err := time.Parse("2006-01-02", *since)
+		if err != nil {
+			return fmt.Errorf("-since: %w", err)
+		}
+		rep, err := legal.RunRegional(ctx, legal.NewPravo(), store, from, *limit)
+		fmt.Printf("в списке: %d, подходящих по названию: %d, уже видели: %d, новых черновиков: %d\n", rep.Listed, rep.Relevant, rep.Seen, rep.Saved)
+		return err
+	case "approve-regional":
+		if !*yes {
+			c, err := store.Queries().CountRegionalDrafts(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("региональных черновиков: %d. Это названия законов регионов и ссылки на официальный портал, без пересказа.\nПодтвердить все: lawtool approve-regional -yes\n", c)
+			return nil
+		}
+		regions, err := store.Queries().ApproveRegionalTitles(ctx)
+		fmt.Printf("подтверждено региональных законов: %d\n", len(regions))
+		return err
 	case "review":
 		return review(ctx, store.Queries(), bufio.NewReader(os.Stdin))
 	case "stats":
