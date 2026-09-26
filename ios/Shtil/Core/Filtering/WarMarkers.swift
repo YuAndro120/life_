@@ -16,6 +16,18 @@ enum WarMarkers {
         return tokens(text).contains { word in words.contains { word.hasPrefix($0.stem) && word.count - $0.stem.count <= $0.tail } }
     }
 
+    private static let lawPhrases = [
+        "специальной военной операции", "боевых действий", "вооруженного вторжения", "погибших военнослужащих", "погибших участников",
+        "погибших сотрудников", "участников сво", "участникам сво", "участники сво",
+    ]
+
+    /// Закон про участников СВО, ветеранов боевых действий и семьи погибших: скрывается тем же переключателем, что и новости.
+    static func matches(_ law: Law) -> Bool {
+        let text = normalize(law.title + " " + law.whatChanged + " " + law.whoAffected)
+        if lawPhrases.contains(where: text.contains) { return true }
+        return tokens(text).contains("сво")
+    }
+
     private static let endWords = ["заверш", "окончен", "окончани", "прекращ"]
 
     /// Официальное заявление о том, что СВО закончилась: тип «официальное», упомянута СВО и слово об окончании.

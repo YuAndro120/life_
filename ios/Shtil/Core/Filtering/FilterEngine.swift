@@ -14,6 +14,7 @@ enum FilterEngine {
         today: CalendarDate
     ) -> Edition {
         let relevantLaws = AudienceMatcher.relevantLaws(laws, profile: profile, asOf: today)
+            .filter { !(preferences.hideWar && WarMarkers.matches($0)) }
 
         let inWindow = feed.stories.filter { story in
             story.updatedAt <= window.end && (window.start.map { story.updatedAt > $0 } ?? true)

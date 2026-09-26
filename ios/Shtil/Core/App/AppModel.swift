@@ -113,7 +113,8 @@ final class AppModel {
 
     /// Законы для календаря: только подписанные и ещё не вступившие в силу, по дате вступления.
     func calendarLaws(onlyMine: Bool) -> [Law] {
-        let signed = laws.filter { $0.status == .signed && $0.dates.effective != nil }
+        let hideWar = settings.preferences.hideWar
+        let signed = laws.filter { $0.status == .signed && $0.dates.effective != nil && !(hideWar && WarMarkers.matches($0)) }
         if onlyMine {
             return AudienceMatcher.relevantLaws(signed, profile: profile.snapshot, asOf: today)
         }

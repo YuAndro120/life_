@@ -95,4 +95,32 @@ import Testing
         p.hideOtherRegions = false
         #expect(FilterEngine.isAllowed(regional("78"), p))
     }
+
+    private func law(_ id: String, title: String, what: String = "Что меняется", who: String = "Кого касается") -> Law {
+        Law(
+            id: id, title: title, whatChanged: what, whoAffected: who, actions: [], audienceTags: ["all"], regionCode: nil,
+            status: .signed, dates: LawDates(introduced: nil, passed: nil, signed: nil, effective: CalendarDate(string: "2026-10-01")),
+            officialUrl: nil, billUrl: nil, actNumber: nil, verifiedAt: nil
+        )
+    }
+
+    @Test func lawsAboutWarParticipantsFollowTheWarSwitch() {
+        #expect(WarMarkers.matches(law("a", title: "Сохранение права на жильё по соцнайму семьям погибших участников СВО")))
+        #expect(WarMarkers.matches(law("b", title: "Уточнён перечень лиц, относимых к ветеранам и инвалидам боевых действий")))
+        #expect(WarMarkers.matches(law("c", title: "Льготы детям", who: "Дети погибших военнослужащих")))
+        #expect(!WarMarkers.matches(law("d", title: "Меняется срок уведомлений об авансовых платежах")))
+        let feed = TestData.feed([])
+        let laws = [law("a", title: "Жильё семьям погибших участников СВО"), law("d", title: "Авансовые платежи для ИП")]
+        func shown(hideWar: Bool) -> Set<String> {
+            var p = prefs
+            p.hideWar = hideWar
+            let e = FilterEngine.edition(
+                number: 1, feed: feed, laws: laws, profile: UserProfile(), preferences: p,
+                window: EditionWindow(start: nil, end: TestData.date("2026-09-25T05:00:00Z")), today: TestData.today
+            )
+            return Set(e.laws.map(\.id))
+        }
+        #expect(shown(hideWar: true) == ["d"])
+        #expect(shown(hideWar: false) == ["a", "d"])
+    }
 }
